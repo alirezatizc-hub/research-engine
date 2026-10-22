@@ -1,0 +1,72 @@
+{
+  "return_pct": -1.08,
+  "final_tmn": 4946178,
+  "trades": 4,
+  "win_rate_pct": 0.0,
+  "profit_factor": 0.0,
+  "avg_win_tmn": 0,
+  "avg_loss_tmn": 13456,
+  "max_drawdown_pct": 1.09,
+  "data_source": "real:api.wallex.ir/v1/udf/history",
+  "kill_switch_at": null,
+  "learning_events": 0,
+  "final_overrides": {},
+  "learn": false,
+  "funnel": {
+    "bars_evaluated": 496,
+    "breakout_cond_failed:55<=rsi<=72": 412,
+    "breakout_cond_failed:close>20bar_high": 484,
+    "breakout_cond_failed:trend_gap>0": 244,
+    "breakout_cond_failed:vol_ratio>=1.8": 412,
+    "breakout_nearmiss(only close>20bar_high fails)": 6,
+    "breakout_nearmiss(only vol_ratio>=1.8 fails)": 8,
+    "breakout_pattern_matched": 4,
+    "dip_cond_failed:bb_pos<=bb_max_pos": 411,
+    "dip_cond_failed:green_candle": 297,
+    "dip_cond_failed:rsi<=rsi_buy": 403,
+    "dip_nearmiss(only bb_pos<=bb_max_pos fails)": 17,
+    "dip_nearmiss(only green_candle fails)": 42,
+    "dip_nearmiss(only rsi<=rsi_buy fails)": 2,
+    "dip_pattern_matched": 10,
+    "entries_executed": 4,
+    "passed_score:breakout": 3,
+    "passed_score:dip": 2,
+    "pending_entries_queued": 5,
+    "rejected:atr_below_min_atr_pct": 14,
+    "rejected:score<70 (breakout)": 1,
+    "rejected:score<70 (dip)": 8,
+    "signal:breakout": 4,
+    "signal:dip": 10,
+    "skip:already_in_position": 68,
+    "skip:cooldown_after_loss": 12,
+    "skip:warmup(<120 bars)": 960
+  },
+  "score_stats": {
+    "dip": {
+      "n": 10,
+      "min": 51.3,
+      "max": 78.3,
+      "mean": 63.2
+    },
+    "breakout": {
+      "n": 4,
+      "min": 68.8,
+      "max": 82.1,
+      "mean": 77.3
+    }
+  },
+  "settings": {
+    "max_drawdown": 0.15,
+    "daily_loss_limit": 0.08,
+    "rules_min_score": 70.0,
+    "min_score": 55.0,
+    "max_drawdown_status": "تعیین‌نشده توسط کاربر (پیش‌فرض پروژه) — مقدار ۳٪ ذکرشده فقط ثبت شده و اعمال نشده؛ docs/DECISIONS.md"
+  },
+  "assumptions": {
+    "ai": "not simulated (rules-only, stricter than live)",
+    "fee_rate": 0.0035,
+    "slippage": 0.001,
+    "bt_size_mult": 0.85,
+    "kill_liquidation": "min(open, prev_close)*(1-0.001*3.0)"
+  }
+}

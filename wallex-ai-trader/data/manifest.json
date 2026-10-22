@@ -1,0 +1,68 @@
+{
+ "source": "api.wallex.ir/v1/udf/history",
+ "source_resolution_min": 1,
+ "resolution": 15,
+ "aggregated_client_side": true,
+ "days": 2,
+ "fetched_at": 1792677910.5766895,
+ "fetched_at_iso": "2026-10-22T14:05:10+00:00",
+ "validation": "ok: sorted, no duplicates, aligned, gap-free, only complete closed candles",
+ "symbols": {
+  "BTCTMN": {
+   "candles": 192,
+   "minute_candles": 2880,
+   "requests": 6,
+   "first_t": 1792504800,
+   "last_t": 1792676700
+  },
+  "ETHTMN": {
+   "candles": 192,
+   "minute_candles": 2880,
+   "requests": 6,
+   "first_t": 1792504800,
+   "last_t": 1792676700
+  },
+  "SOLTMN": {
+   "candles": 192,
+   "minute_candles": 2880,
+   "requests": 6,
+   "first_t": 1792504800,
+   "last_t": 1792676700
+  },
+  "XRPTMN": {
+   "candles": 192,
+   "minute_candles": 2880,
+   "requests": 6,
+   "first_t": 1792504800,
+   "last_t": 1792676700
+  },
+  "DOGETMN": {
+   "candles": 192,
+   "minute_candles": 2880,
+   "requests": 6,
+   "first_t": 1792504800,
+   "last_t": 1792676700
+  },
+  "TRXTMN": {
+   "candles": 192,
+   "minute_candles": 2880,
+   "requests": 6,
+   "first_t": 1792504800,
+   "last_t": 1792676700
+  },
+  "ADATMN": {
+   "candles": 192,
+   "minute_candles": 2880,
+   "requests": 6,
+   "first_t": 1792504800,
+   "last_t": 1792676700
+  },
+  "BNBTMN": {
+   "candles": 192,
+   "minute_candles": 2880,
+   "requests": 6,
+   "first_t": 1792504800,
+   "last_t": 1792676700
+  }
+ }
+}

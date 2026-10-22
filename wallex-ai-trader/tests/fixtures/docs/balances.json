@@ -1,0 +1,22 @@
+{
+ "success": true,
+ "message": "ok",
+ "result": {
+  "balances": {
+   "TMN": {
+    "asset": "TMN",
+    "faName": "x",
+    "fiat": true,
+    "value": "10000000",
+    "locked": "0"
+   },
+   "USDT": {
+    "asset": "USDT",
+    "faName": "x",
+    "fiat": false,
+    "value": "10.00000000",
+    "locked": "0.00000000"
+   }
+  }
+ }
+}

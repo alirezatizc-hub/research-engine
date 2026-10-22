@@ -1,0 +1,28 @@
+{
+ "success": true,
+ "message": "ok",
+ "result": {
+  "symbols": {
+   "BTCUSDT": {
+    "symbol": "BTCUSDT",
+    "baseAsset": "BTC",
+    "baseAssetPrecision": 8,
+    "quoteAsset": "USDT",
+    "quotePrecision": 8,
+    "faName": "x",
+    "faBaseAsset": "x",
+    "faQuoteAsset": "x",
+    "stepSize": 6,
+    "tickSize": 2,
+    "minQty": 1e-06,
+    "minNotional": 10,
+    "stats": {
+     "bidPrice": "20900.0",
+     "askPrice": "21097.74",
+     "lastPrice": "20991.43"
+    },
+    "createdAt": "2020-04-01T00:00:00.000000Z"
+   }
+  }
+ }
+}
