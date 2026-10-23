@@ -64,6 +64,9 @@ def evaluate(symbol, candles, cfg):
                f"RSI={f['rsi']} not overbought"]
     if not kind:
         return None, f
+    allowed = getattr(cfg, "kinds", None) or ("dip", "breakout")
+    if kind not in allowed:                   # سناریوهای بهینه‌سازی می‌توانند یک الگو را خاموش کنند
+        return None, f
     return Signal(symbol, kind, round(min(score, 100), 1), f["price"], f["atr_pct"], f, why), f
 
 

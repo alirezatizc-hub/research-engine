@@ -115,6 +115,7 @@ class Config:
     min_atr_pct: float = 0.0025
     max_trend_dev: float = 0.04
     bb_max_pos: float = 0.30
+    kinds: list = field(default_factory=lambda: ["dip", "breakout"])   # الگوهای مجاز سیگنال
 
     # ---- ریسک ----
     max_positions: int = 3
@@ -162,7 +163,7 @@ class Config:
                           "daily_loss_limit", "max_drawdown", "fee_rate", "min_notional", "order_slip",
                           "stop_entries_h", "flatten_min", "challenge_end", "symbols", "quote_asset",
                           "min_score", "rules_min_score", "rsi_buy", "min_atr_pct", "max_trend_dev",
-                          "bb_max_pos")
+                          "bb_max_pos", "kinds")
 
     @classmethod
     def from_env(cls, dotenv_paths=None) -> "Config":
@@ -260,6 +261,8 @@ class Config:
             e.append("save_interval_s must be >= 0")
         if not isinstance(self.extra_headers, dict):
             e.append("extra_headers must be a dict")
+        if not self.kinds or any(k not in ("dip", "breakout") for k in self.kinds):
+            e.append("kinds must be a non-empty subset of dip|breakout")
         return e
 
     def fingerprint(self):

@@ -123,6 +123,88 @@ def cmd_account(cfg):
     print("\nاگر هدر مخصوص حساب فرعی لازم است: WTB_EXTRA_HEADERS='{\"X-Sub-Account\":\"...\"}'")
 
 
+def cmd_optimize(cfg, a):
+    """چرخهٔ بهینه‌سازی: بک‌تست → تحلیل (و در صورت وجود کلید، AI) → اعتبارسنجی → پیشنهاد برای تأیید."""
+    from . import optimizer as O
+    if a.list:
+        runs = O.list_runs()
+        if not runs:
+            print("هیچ اجرایی در logs/optimizer نیست.")
+            return
+        for r in runs:
+            print(f"{r['run_id']:<28} {str(r['status']):<18} best={r.get('selected') or '—':<24} "
+                  f"val={((r.get('validation') or {}).get('return_pct'))}% source={r.get('source')}")
+        return
+    if a.approve:
+        run_id = a.approve
+        if run_id == "last":
+            runs = O.list_runs()
+            run_id = runs[0]["run_id"] if runs else ""
+        if not run_id:
+            sys.exit("اجرایی برای اعمال پیدا نشد")
+        try:
+            res = O.apply_proposal(run_id, confirm=bool(a.yes), force=bool(a.force),
+                                   env_path=os.path.join(os.getcwd(), a.env))
+        except O.OptimizerError as e:
+            sys.exit(f"⛔ {e}" + ("" if a.yes else "\n   برای تأیید: --yes"))
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        return
+
+    split = (0.6, 0.2, 0.2)
+    if a.split:
+        try:
+            parts = [float(x) for x in str(a.split).replace(" ", "").split(",")]
+        except ValueError:
+            sys.exit("--split باید مثل 0.6,0.2 یا 0.6,0.2,0.2 باشد")
+        if len(parts) == 2:
+            parts = [parts[0], parts[1], round(1 - parts[0] - parts[1], 6)]
+        if len(parts) != 3 or abs(sum(parts) - 1) > 1e-6 or min(parts) <= 0:
+            sys.exit("--split باید سه عدد مثبت با جمع ۱ باشد")
+        split = tuple(parts)
+
+    if a.synthetic:
+        from .backtest import synthetic
+        data = {s: synthetic(1500, seed=i + 1) for i, s in enumerate(cfg.symbols[:4])}
+        label = "SYNTHETIC_NOT_EVIDENCE"
+        print("!! داده مصنوعی — فقط تست دود چرخه؛ هیچ ادعای سودآوری ندارد")
+    else:
+        from .backtest import load_real_dataset
+        data, man = load_real_dataset(cfg.data_dir, cfg.symbols)
+        label = f"real:{man.get('source')}"
+
+    ai = None
+    if a.ai:
+        from .ai_agent import AIAgent
+        agent = AIAgent(cfg)
+        if agent.enabled:
+            ai = agent
+            print(f"AI: {cfg.ai_provider}/{cfg.ai_model} در نقش تحلیل‌گر (پارامترها فقط پیشنهادند)")
+        else:
+            print("⚠️ کلید AI نیست؛ چرخه با جست‌وجوی محلی ادامه می‌یابد (rules_only)")
+
+    last = {"stage": None}
+
+    def progress(stage, done, total, detail=""):
+        if stage != last["stage"]:
+            print(f"\n[{stage}] {detail}" if detail else f"\n[{stage}]", flush=True)
+            last["stage"] = stage
+        elif detail:
+            print(f"  ({done}/{total}) {detail}", flush=True)
+
+    try:
+        rep = O.run_optimizer(data, cfg, data_label=label, split=split, rounds=a.rounds,
+                              min_trades=a.min_trades, ai=ai, purge_bars=a.purge, progress=progress)
+    except O.OptimizerError as e:
+        sys.exit(f"⛔ {e}")
+    except KeyboardInterrupt:
+        sys.exit("متوقف شد (گزارش نیمه‌کاره نوشته نشد)")
+    if a.json:
+        print(json.dumps(rep, ensure_ascii=False, indent=1, default=str))
+    else:
+        print("\n" + O.format_report(rep))
+        print(f"\nخروجی: {os.path.join(O.OUT_ROOT, rep['run_id'])}/  (report.json, proposal.json, summary.md)")
+
+
 def cmd_doctor(cfg):
     from .safety import LiveGate, code_hash, schemas_hash
     checks = []
@@ -193,6 +275,19 @@ def main():
     t.add_argument("--min-trades", type=int, default=2)
     t.add_argument("--max-combos", type=int, default=60)
     t.add_argument("--synthetic", action="store_true")
+    op = sub.add_parser("optimize", help="چرخهٔ بهینه‌سازی: بک‌تست → تحلیل → اعتبارسنجی → پیشنهاد")
+    op.add_argument("--synthetic", action="store_true", help="دادهٔ مصنوعی (فقط تست دود)")
+    op.add_argument("--ai", action="store_true", help="تحلیل و پیشنهاد با AI (نیازمند کلید)")
+    op.add_argument("--rounds", type=int, default=2, help="تعداد دورهای چرخه (۱ تا ۴)")
+    op.add_argument("--split", default="", help="نسبت پنجره‌ها، مثل 0.6,0.2 (پیش‌فرض 0.6,0.2,0.2)")
+    op.add_argument("--min-trades", type=int, default=2, help="حداقل معامله در هر پنجره")
+    op.add_argument("--purge", type=int, default=8, help="شکاف بین پنجره‌ها (کندل)")
+    op.add_argument("--json", action="store_true", help="چاپ گزارش کامل JSON")
+    op.add_argument("--list", action="store_true", help="فهرست اجراهای قبلی")
+    op.add_argument("--approve", default="", help="run-id (یا last) برای اعمال پس از تأیید")
+    op.add_argument("--yes", action="store_true", help="تأیید صریح اعمال")
+    op.add_argument("--force", action="store_true", help="اعمال حتی وقتی اعتبارسنجی مثبت نیست")
+    op.add_argument("--env", default=".env", help="مسیر فایل env برای اعمال")
     pr = sub.add_parser("profiles", help="پروفایل‌های آمادهٔ ریسک")
     pr.add_argument("--apply", default="", help="نام پروفایل برای نوشتن در .env")
     pr.add_argument("--write", action="store_true", help="نوشتن در .env (بدون این فلگ فقط نشان می‌دهد)")
@@ -323,6 +418,8 @@ def main():
                          min_trades=a.min_trades, max_combos=a.max_combos, label=label)
         print("\n" + format_tuning(rep))
         print("\nخروجی کامل: logs/tuning/tuning_report.json")
+    elif a.cmd == "optimize":
+        cmd_optimize(cfg, a)
     elif a.cmd == "profiles":
         import dataclasses
         from .profiles import PROFILES

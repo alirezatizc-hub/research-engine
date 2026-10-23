@@ -1,0 +1,1735 @@
+{
+ "run_id": "opt-20261023-152643",
+ "created_at": "2026-10-23T15:26:46+00:00",
+ "data": {
+  "label": "SYNTHETIC_NOT_EVIDENCE",
+  "fingerprint": "ad4a875c98861cd6",
+  "symbols": [
+   "BTCTMN",
+   "ETHTMN",
+   "SOLTMN",
+   "XRPTMN"
+  ],
+  "bars": 1500,
+  "windows": {
+   "train": {
+    "t0": 1700000000,
+    "t1": 1700801000,
+    "trade_bars": 890,
+    "symbols": 4
+   },
+   "validation": {
+    "t0": 1700808200,
+    "t1": 1701074600,
+    "trade_bars": 296,
+    "symbols": 4
+   },
+   "test": {
+    "t0": 1701081800,
+    "t1": 1701350000,
+    "trade_bars": 298,
+    "symbols": 4
+   }
+  },
+  "purge_bars": 8,
+  "split": [
+   0.6,
+   0.2,
+   0.2
+  ]
+ },
+ "config_base": {
+  "min_atr_pct": 0.0025,
+  "rsi_buy": 45.0,
+  "bb_max_pos": 0.3,
+  "min_score": 55.0,
+  "rules_min_score": 55.0,
+  "sl_atr": 2.5,
+  "tp_atr": 5.0,
+  "max_trend_dev": 0.04,
+  "max_trades_per_day": 20,
+  "risk_per_trade": 0.008,
+  "max_pos_frac": 0.25,
+  "max_positions": 3,
+  "max_hold_h": 48.0,
+  "trail_activate": 0.04,
+  "trail_dist": 0.025,
+  "kinds": [
+   "dip",
+   "breakout"
+  ],
+  "fee_rate": 0.0035,
+  "slippage": 0.001
+ },
+ "config_fingerprint": "4556c2852f08",
+ "min_trades": 2,
+ "rounds": 2,
+ "ranking": [
+  {
+   "name": "bb_max_pos+0.05",
+   "source": "local_search",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "bb_max_pos": 0.35,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "score": -0.831,
+   "status": "ok",
+   "train": 0.86,
+   "validation": 0.55,
+   "reject": null
+  },
+  {
+   "name": "bb_max_pos-0.05",
+   "source": "local_search",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "bb_max_pos": 0.25,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "score": -1.844,
+   "status": "ok",
+   "train": 1.69,
+   "validation": -0.29,
+   "reject": null
+  },
+  {
+   "name": "wide_swing",
+   "source": "seed",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6
+   },
+   "score": -2.369,
+   "status": "ok",
+   "train": 0.86,
+   "validation": -0.29,
+   "reject": null
+  },
+  {
+   "name": "min_atr_pct×0.8",
+   "source": "local_search",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "min_atr_pct": 0.002,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "score": -2.369,
+   "status": "ok",
+   "train": 0.86,
+   "validation": -0.29,
+   "reject": null
+  },
+  {
+   "name": "min_atr_pct×1.25",
+   "source": "local_search",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "min_atr_pct": 0.003125,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "score": -2.369,
+   "status": "ok",
+   "train": 0.86,
+   "validation": -0.29,
+   "reject": null
+  },
+  {
+   "name": "rsi_buy+3",
+   "source": "local_search",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "rsi_buy": 48.0,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "score": -2.576,
+   "status": "ok",
+   "train": 1.96,
+   "validation": -0.8,
+   "reject": null
+  },
+  {
+   "name": "fewer_bigger",
+   "source": "seed",
+   "params": {
+    "max_positions": 2,
+    "max_pos_frac": 0.325,
+    "risk_per_trade": 0.006,
+    "max_trades_per_day": 8
+   },
+   "score": -3.59,
+   "status": "ok",
+   "train": 0.1,
+   "validation": -0.99,
+   "reject": null
+  },
+  {
+   "name": "rsi_buy-3",
+   "source": "local_search",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "rsi_buy": 42.0,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "score": -3.6,
+   "status": "ok",
+   "train": 0.62,
+   "validation": -0.89,
+   "reject": null
+  },
+  {
+   "name": "conservative",
+   "source": "seed",
+   "params": {
+    "min_atr_pct": 0.004,
+    "rsi_buy": 40.0,
+    "bb_max_pos": 0.21,
+    "min_score": 63.0,
+    "rules_min_score": 63.0,
+    "max_trades_per_day": 12
+   },
+   "score": -4.825,
+   "status": "ok",
+   "train": -0.85,
+   "validation": -0.51,
+   "reject": null
+  },
+  {
+   "name": "tight_stops",
+   "source": "seed",
+   "params": {
+    "sl_atr": 1.75,
+    "tp_atr": 4.0,
+    "trail_activate": 0.03,
+    "max_hold_h": 24.0
+   },
+   "score": -4.936,
+   "status": "ok",
+   "train": 0.14,
+   "validation": -2.02,
+   "reject": null
+  },
+  {
+   "name": "dip_only",
+   "source": "seed",
+   "params": {
+    "kinds": [
+     "dip"
+    ]
+   },
+   "score": -6.569,
+   "status": "ok",
+   "train": -0.46,
+   "validation": -2.04,
+   "reject": null
+  },
+  {
+   "name": "active",
+   "source": "seed",
+   "params": {
+    "min_atr_pct": 0.0015,
+    "rsi_buy": 50.0,
+    "bb_max_pos": 0.39,
+    "min_score": 50.0,
+    "rules_min_score": 50.0,
+    "max_trades_per_day": 30
+   },
+   "score": -7.139,
+   "status": "ok",
+   "train": -1.38,
+   "validation": -2.31,
+   "reject": null
+  },
+  {
+   "name": "baseline",
+   "source": "seed",
+   "params": {},
+   "score": -7.43,
+   "status": "ok",
+   "train": -1.44,
+   "validation": -2.04,
+   "reject": null
+  },
+  {
+   "name": "breakout_only",
+   "source": "seed",
+   "params": {
+    "kinds": [
+     "breakout"
+    ]
+   },
+   "score": -8.337,
+   "status": "ok",
+   "train": -3.18,
+   "validation": -1.61,
+   "reject": null
+  }
+ ],
+ "scenarios": [
+  {
+   "name": "baseline",
+   "source": "seed",
+   "note": "تنظیمات فعلی بدون تغییر",
+   "params": {},
+   "issues": [],
+   "train": {
+    "return_pct": -1.44,
+    "max_drawdown_pct": 3.46,
+    "trades": 17,
+    "win_rate_pct": 52.9,
+    "profit_factor": 0.73,
+    "stability_pct": 1.068,
+    "score": -7.299,
+    "reject": null,
+    "final_tmn": 4928039,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      633
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      267
+     ],
+     [
+      "skip:already_in_position",
+      267
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      265
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      244
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -2.04,
+    "max_drawdown_pct": 3.2,
+    "trades": 11,
+    "win_rate_pct": 45.5,
+    "profit_factor": 0.43,
+    "stability_pct": 0.402,
+    "score": -7.496,
+    "reject": null,
+    "final_tmn": 4897968,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      246
+     ],
+     [
+      "bars_evaluated",
+      109
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      109
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      108
+     ]
+    ]
+   },
+   "score": -7.43,
+   "status": "ok",
+   "round": 1
+  },
+  {
+   "name": "conservative",
+   "source": "seed",
+   "note": "فیلتر نوسان سخت‌تر، آستانه بالاتر",
+   "params": {
+    "min_atr_pct": 0.004,
+    "rsi_buy": 40.0,
+    "bb_max_pos": 0.21,
+    "min_score": 63.0,
+    "rules_min_score": 63.0,
+    "max_trades_per_day": 12
+   },
+   "issues": [],
+   "train": {
+    "return_pct": -0.85,
+    "max_drawdown_pct": 3.34,
+    "trades": 10,
+    "win_rate_pct": 40.0,
+    "profit_factor": 0.77,
+    "stability_pct": 0.846,
+    "score": -6.298,
+    "reject": null,
+    "final_tmn": 4957590,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_evaluated",
+      1596
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      1578
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      1483
+     ],
+     [
+      "dip_cond_failed:rsi<=rsi_buy",
+      1415
+     ],
+     [
+      "dip_cond_failed:bb_pos<=bb_max_pos",
+      1284
+     ],
+     [
+      "breakout_cond_failed:55<=rsi<=72",
+      1060
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -0.51,
+    "max_drawdown_pct": 1.77,
+    "trades": 3,
+    "win_rate_pct": 33.3,
+    "profit_factor": 0.68,
+    "stability_pct": 0.319,
+    "score": -4.089,
+    "reject": null,
+    "final_tmn": 4974499,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "bars_evaluated",
+      881
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      874
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      831
+     ],
+     [
+      "dip_cond_failed:rsi<=rsi_buy",
+      753
+     ],
+     [
+      "dip_cond_failed:bb_pos<=bb_max_pos",
+      690
+     ]
+    ]
+   },
+   "score": -4.825,
+   "status": "ok",
+   "round": 1
+  },
+  {
+   "name": "active",
+   "source": "seed",
+   "note": "آستانه پایین‌تر، معاملهٔ بیشتر",
+   "params": {
+    "min_atr_pct": 0.0015,
+    "rsi_buy": 50.0,
+    "bb_max_pos": 0.39,
+    "min_score": 50.0,
+    "rules_min_score": 50.0,
+    "max_trades_per_day": 30
+   },
+   "issues": [],
+   "train": {
+    "return_pct": -1.38,
+    "max_drawdown_pct": 3.47,
+    "trades": 17,
+    "win_rate_pct": 47.1,
+    "profit_factor": 0.68,
+    "stability_pct": 0.971,
+    "score": -7.286,
+    "reject": null,
+    "final_tmn": 4931102,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      694
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "skip:already_in_position",
+      147
+     ],
+     [
+      "bars_evaluated",
+      144
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      142
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      132
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -2.31,
+    "max_drawdown_pct": 2.74,
+    "trades": 10,
+    "win_rate_pct": 40.0,
+    "profit_factor": 0.28,
+    "stability_pct": 0.39,
+    "score": -7.065,
+    "reject": null,
+    "final_tmn": 4884562,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      247
+     ],
+     [
+      "bars_evaluated",
+      99
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      99
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      94
+     ]
+    ]
+   },
+   "score": -7.139,
+   "status": "ok",
+   "round": 1
+  },
+  {
+   "name": "dip_only",
+   "source": "seed",
+   "note": "فقط الگوی بازگشت از افت",
+   "params": {
+    "kinds": [
+     "dip"
+    ]
+   },
+   "issues": [],
+   "train": {
+    "return_pct": -0.46,
+    "max_drawdown_pct": 2.8,
+    "trades": 16,
+    "win_rate_pct": 50.0,
+    "profit_factor": 0.88,
+    "stability_pct": 0.951,
+    "score": -4.715,
+    "reject": null,
+    "final_tmn": 4977139,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      631
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      275
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      273
+     ],
+     [
+      "skip:already_in_position",
+      267
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      251
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -2.04,
+    "max_drawdown_pct": 3.2,
+    "trades": 11,
+    "win_rate_pct": 45.5,
+    "profit_factor": 0.43,
+    "stability_pct": 0.402,
+    "score": -7.496,
+    "reject": null,
+    "final_tmn": 4897968,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      246
+     ],
+     [
+      "bars_evaluated",
+      109
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      109
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      108
+     ]
+    ]
+   },
+   "score": -6.569,
+   "status": "ok",
+   "round": 1
+  },
+  {
+   "name": "breakout_only",
+   "source": "seed",
+   "note": "فقط شکست سقف با حجم",
+   "params": {
+    "kinds": [
+     "breakout"
+    ]
+   },
+   "issues": [],
+   "train": {
+    "return_pct": -3.18,
+    "max_drawdown_pct": 3.34,
+    "trades": 4,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "stability_pct": 0.405,
+    "score": -10.762,
+    "reject": null,
+    "final_tmn": 4840967,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_evaluated",
+      2799
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      2765
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      2615
+     ],
+     [
+      "dip_cond_failed:bb_pos<=bb_max_pos",
+      2067
+     ],
+     [
+      "dip_cond_failed:rsi<=rsi_buy",
+      2056
+     ],
+     [
+      "breakout_cond_failed:55<=rsi<=72",
+      1873
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -1.61,
+    "max_drawdown_pct": 2.08,
+    "trades": 2,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "stability_pct": 0.511,
+    "score": -7.125,
+    "reject": null,
+    "final_tmn": 4919490,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "bars_evaluated",
+      1053
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      1042
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      988
+     ],
+     [
+      "dip_cond_failed:rsi<=rsi_buy",
+      757
+     ],
+     [
+      "breakout_cond_failed:55<=rsi<=72",
+      749
+     ]
+    ]
+   },
+   "score": -8.337,
+   "status": "ok",
+   "round": 1
+  },
+  {
+   "name": "tight_stops",
+   "source": "seed",
+   "note": "استاپ/تارگت تنگ‌تر، خروج سریع‌تر",
+   "params": {
+    "sl_atr": 1.75,
+    "tp_atr": 4.0,
+    "trail_activate": 0.03,
+    "max_hold_h": 24.0
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 0.14,
+    "max_drawdown_pct": 2.32,
+    "trades": 25,
+    "win_rate_pct": 40.0,
+    "profit_factor": 1.04,
+    "stability_pct": 0.643,
+    "score": -2.761,
+    "reject": null,
+    "final_tmn": 5007128,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_evaluated",
+      531
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      528
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      521
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      481
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "skip:already_in_position",
+      439
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -2.02,
+    "max_drawdown_pct": 2.48,
+    "trades": 12,
+    "win_rate_pct": 33.3,
+    "profit_factor": 0.39,
+    "stability_pct": 0.257,
+    "score": -6.024,
+    "reject": null,
+    "final_tmn": 4898880,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      202
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      202
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      199
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      189
+     ]
+    ]
+   },
+   "score": -4.936,
+   "status": "ok",
+   "round": 1
+  },
+  {
+   "name": "wide_swing",
+   "source": "seed",
+   "note": "استاپ/تارگت گشادتر، نگه‌داری بلندتر",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 0.86,
+    "max_drawdown_pct": 2.44,
+    "trades": 14,
+    "win_rate_pct": 57.1,
+    "profit_factor": 1.25,
+    "stability_pct": 0.827,
+    "score": -2.058,
+    "reject": null,
+    "final_tmn": 5043125,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      641
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      255
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      253
+     ],
+     [
+      "skip:already_in_position",
+      253
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      234
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -0.29,
+    "max_drawdown_pct": 1.9,
+    "trades": 9,
+    "win_rate_pct": 44.4,
+    "profit_factor": 0.91,
+    "stability_pct": 0.2,
+    "score": -2.525,
+    "reject": null,
+    "final_tmn": 4985733,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      236
+     ],
+     [
+      "bars_evaluated",
+      130
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      130
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      122
+     ]
+    ]
+   },
+   "score": -2.369,
+   "status": "ok",
+   "round": 1
+  },
+  {
+   "name": "fewer_bigger",
+   "source": "seed",
+   "note": "تمرکز روی بهترین سیگنال‌ها با حجم بزرگ‌تر",
+   "params": {
+    "max_positions": 2,
+    "max_pos_frac": 0.325,
+    "risk_per_trade": 0.006,
+    "max_trades_per_day": 8
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 0.1,
+    "max_drawdown_pct": 2.01,
+    "trades": 11,
+    "win_rate_pct": 54.5,
+    "profit_factor": 1.04,
+    "stability_pct": 0.612,
+    "score": -2.166,
+    "reject": null,
+    "final_tmn": 5005217,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      703
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      196
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      195
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      175
+     ],
+     [
+      "dip_cond_failed:rsi<=rsi_buy",
+      160
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -0.99,
+    "max_drawdown_pct": 1.97,
+    "trades": 8,
+    "win_rate_pct": 50.0,
+    "profit_factor": 0.49,
+    "stability_pct": 0.414,
+    "score": -4.302,
+    "reject": null,
+    "final_tmn": 4950638,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      270
+     ],
+     [
+      "bars_evaluated",
+      77
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      77
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      76
+     ]
+    ]
+   },
+   "score": -3.59,
+   "status": "ok",
+   "round": 1
+  },
+  {
+   "name": "min_atr_pct×0.8",
+   "source": "local_search",
+   "note": "جهش حول بهترین گزینه: min_atr_pct",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "min_atr_pct": 0.002,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 0.86,
+    "max_drawdown_pct": 2.44,
+    "trades": 14,
+    "win_rate_pct": 57.1,
+    "profit_factor": 1.25,
+    "stability_pct": 0.827,
+    "score": -2.058,
+    "reject": null,
+    "final_tmn": 5043125,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      641
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      255
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      253
+     ],
+     [
+      "skip:already_in_position",
+      253
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      234
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -0.29,
+    "max_drawdown_pct": 1.9,
+    "trades": 9,
+    "win_rate_pct": 44.4,
+    "profit_factor": 0.91,
+    "stability_pct": 0.2,
+    "score": -2.525,
+    "reject": null,
+    "final_tmn": 4985733,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      236
+     ],
+     [
+      "bars_evaluated",
+      130
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      130
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      122
+     ]
+    ]
+   },
+   "score": -2.369,
+   "status": "ok",
+   "round": 2
+  },
+  {
+   "name": "min_atr_pct×1.25",
+   "source": "local_search",
+   "note": "جهش حول بهترین گزینه: min_atr_pct",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "min_atr_pct": 0.003125,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 0.86,
+    "max_drawdown_pct": 2.44,
+    "trades": 14,
+    "win_rate_pct": 57.1,
+    "profit_factor": 1.25,
+    "stability_pct": 0.827,
+    "score": -2.058,
+    "reject": null,
+    "final_tmn": 5043125,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      641
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      255
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      253
+     ],
+     [
+      "skip:already_in_position",
+      253
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      234
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -0.29,
+    "max_drawdown_pct": 1.9,
+    "trades": 9,
+    "win_rate_pct": 44.4,
+    "profit_factor": 0.91,
+    "stability_pct": 0.2,
+    "score": -2.525,
+    "reject": null,
+    "final_tmn": 4985733,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      236
+     ],
+     [
+      "bars_evaluated",
+      130
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      130
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      122
+     ]
+    ]
+   },
+   "score": -2.369,
+   "status": "ok",
+   "round": 2
+  },
+  {
+   "name": "rsi_buy-3",
+   "source": "local_search",
+   "note": "جهش حول بهترین گزینه: rsi_buy",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "rsi_buy": 42.0,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 0.62,
+    "max_drawdown_pct": 2.42,
+    "trades": 12,
+    "win_rate_pct": 50.0,
+    "profit_factor": 1.23,
+    "stability_pct": 0.618,
+    "score": -2.184,
+    "reject": null,
+    "final_tmn": 5030977,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_evaluated",
+      539
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      532
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      521
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      496
+     ],
+     [
+      "dip_cond_failed:rsi<=rsi_buy",
+      481
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -0.89,
+    "max_drawdown_pct": 2.23,
+    "trades": 8,
+    "win_rate_pct": 37.5,
+    "profit_factor": 0.68,
+    "stability_pct": 0.156,
+    "score": -4.308,
+    "reject": null,
+    "final_tmn": 4955535,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      206
+     ],
+     [
+      "bars_evaluated",
+      193
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      192
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      186
+     ]
+    ]
+   },
+   "score": -3.6,
+   "status": "ok",
+   "round": 2
+  },
+  {
+   "name": "rsi_buy+3",
+   "source": "local_search",
+   "note": "جهش حول بهترین گزینه: rsi_buy",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "rsi_buy": 48.0,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 1.96,
+    "max_drawdown_pct": 2.03,
+    "trades": 13,
+    "win_rate_pct": 69.2,
+    "profit_factor": 1.99,
+    "stability_pct": 0.761,
+    "score": 1.005,
+    "reject": null,
+    "final_tmn": 5098105,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      672
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      196
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      195
+     ],
+     [
+      "skip:already_in_position",
+      191
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      179
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -0.8,
+    "max_drawdown_pct": 2.37,
+    "trades": 8,
+    "win_rate_pct": 37.5,
+    "profit_factor": 0.74,
+    "stability_pct": 0.073,
+    "score": -4.367,
+    "reject": null,
+    "final_tmn": 4959919,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      258
+     ],
+     [
+      "bars_evaluated",
+      82
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      82
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      77
+     ]
+    ]
+   },
+   "score": -2.576,
+   "status": "ok",
+   "round": 2
+  },
+  {
+   "name": "bb_max_pos-0.05",
+   "source": "local_search",
+   "note": "جهش حول بهترین گزینه: bb_max_pos",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "bb_max_pos": 0.25,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 1.69,
+    "max_drawdown_pct": 2.29,
+    "trades": 14,
+    "win_rate_pct": 64.3,
+    "profit_factor": 1.56,
+    "stability_pct": 0.864,
+    "score": -0.482,
+    "reject": null,
+    "final_tmn": 5084270,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      628
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      281
+     ],
+     [
+      "skip:already_in_position",
+      279
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      278
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      260
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": -0.29,
+    "max_drawdown_pct": 1.9,
+    "trades": 9,
+    "win_rate_pct": 44.4,
+    "profit_factor": 0.91,
+    "stability_pct": 0.2,
+    "score": -2.525,
+    "reject": null,
+    "final_tmn": 4985733,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      236
+     ],
+     [
+      "bars_evaluated",
+      130
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      130
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      122
+     ]
+    ]
+   },
+   "score": -1.844,
+   "status": "ok",
+   "round": 2
+  },
+  {
+   "name": "bb_max_pos+0.05",
+   "source": "local_search",
+   "note": "جهش حول بهترین گزینه: bb_max_pos",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "bb_max_pos": 0.35,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "issues": [],
+   "train": {
+    "return_pct": 0.86,
+    "max_drawdown_pct": 2.44,
+    "trades": 14,
+    "win_rate_pct": 57.1,
+    "profit_factor": 1.25,
+    "stability_pct": 0.827,
+    "score": -2.058,
+    "reject": null,
+    "final_tmn": 5043125,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "bars_entry_blocked:max_positions",
+      641
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_evaluated",
+      255
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      253
+     ],
+     [
+      "skip:already_in_position",
+      253
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      234
+     ]
+    ]
+   },
+   "validation": {
+    "return_pct": 0.55,
+    "max_drawdown_pct": 1.29,
+    "trades": 8,
+    "win_rate_pct": 50.0,
+    "profit_factor": 1.22,
+    "stability_pct": 0.234,
+    "score": -0.217,
+    "reject": null,
+    "final_tmn": 5027416,
+    "dd_cap_pct": 5.0,
+    "funnel_top": [
+     [
+      "skip:before_window",
+      3112
+     ],
+     [
+      "skip:warmup(<120 bars)",
+      480
+     ],
+     [
+      "bars_entry_blocked:max_positions",
+      224
+     ],
+     [
+      "bars_evaluated",
+      153
+     ],
+     [
+      "breakout_cond_failed:vol_ratio>=1.8",
+      153
+     ],
+     [
+      "breakout_cond_failed:close>20bar_high",
+      146
+     ]
+    ]
+   },
+   "score": -0.831,
+   "status": "ok",
+   "round": 2
+  }
+ ],
+ "ai": [],
+ "rounds_log": [
+  {
+   "round": 1,
+   "scenarios": 8,
+   "valid": 8,
+   "best": "wide_swing",
+   "best_score": -2.369
+  },
+  {
+   "round": 2,
+   "scenarios": 6,
+   "valid": 6,
+   "best": "bb_max_pos+0.05",
+   "best_score": -0.831
+  }
+ ],
+ "final": {
+  "best": {
+   "name": "bb_max_pos+0.05",
+   "params": {
+    "sl_atr": 3.0,
+    "tp_atr": 5.75,
+    "trail_activate": 0.05,
+    "max_hold_h": 57.6,
+    "bb_max_pos": 0.35,
+    "rules_min_score": 55.0,
+    "min_score": 55.0
+   },
+   "return_pct": 0.09,
+   "max_drawdown_pct": 1.8,
+   "trades": 7,
+   "win_rate_pct": 57.1,
+   "profit_factor": 1.08,
+   "stability_pct": 0.416,
+   "score": -2.198,
+   "reject": null,
+   "final_tmn": 5004695,
+   "dd_cap_pct": 5.0
+  },
+  "baseline": {
+   "name": "baseline",
+   "params": {},
+   "return_pct": -0.13,
+   "max_drawdown_pct": 2.22,
+   "trades": 8,
+   "win_rate_pct": 62.5,
+   "profit_factor": 0.94,
+   "stability_pct": 0.603,
+   "score": -3.361,
+   "reject": null,
+   "final_tmn": 4993491,
+   "dd_cap_pct": 5.0
+  }
+ },
+ "proposal": {
+  "run_id": "opt-20261023-152643",
+  "status": "pending_approval",
+  "selected": "bb_max_pos+0.05",
+  "source": "local_search",
+  "params": {
+   "sl_atr": 3.0,
+   "tp_atr": 5.75,
+   "trail_activate": 0.05,
+   "max_hold_h": 57.6,
+   "bb_max_pos": 0.35,
+   "rules_min_score": 55.0,
+   "min_score": 55.0
+  },
+  "diff_vs_current": {
+   "sl_atr": {
+    "from": 2.5,
+    "to": 3.0
+   },
+   "tp_atr": {
+    "from": 5.0,
+    "to": 5.75
+   },
+   "trail_activate": {
+    "from": 0.04,
+    "to": 0.05
+   },
+   "max_hold_h": {
+    "from": 48.0,
+    "to": 57.6
+   },
+   "bb_max_pos": {
+    "from": 0.3,
+    "to": 0.35
+   }
+  },
+  "note": "جهش حول بهترین گزینه: bb_max_pos",
+  "train": {
+   "return_pct": 0.86,
+   "max_drawdown_pct": 2.44,
+   "trades": 14,
+   "profit_factor": 1.25,
+   "stability_pct": 0.827
+  },
+  "validation": {
+   "return_pct": 0.55,
+   "max_drawdown_pct": 1.29,
+   "trades": 8,
+   "profit_factor": 1.22,
+   "stability_pct": 0.234
+  },
+  "held_out_test": {
+   "return_pct": 0.09,
+   "max_drawdown_pct": 1.8,
+   "trades": 7,
+   "profit_factor": 1.08,
+   "stability_pct": 0.416
+  },
+  "baseline_on_test": {
+   "return_pct": -0.13,
+   "max_drawdown_pct": 2.22,
+   "trades": 8
+  },
+  "score": -0.831,
+  "recommend_apply": false,
+  "warning": "این اجرا روی دادهٔ مصنوعی (SYNTHETIC_NOT_EVIDENCE) انجام شده است؛ هیچ ادعای آماری ندارد و برای اعمال باید چرخه روی دادهٔ واقعی ۳۰ روزه (`fetch --days 30`) اجرا شود.",
+  "synthetic": true,
+  "ai": {
+   "used": false,
+   "rounds": 0,
+   "diagnosis": null
+  },
+  "data": {
+   "label": "SYNTHETIC_NOT_EVIDENCE",
+   "fingerprint": "ad4a875c98861cd6",
+   "bars": 1500,
+   "train_bars": 890,
+   "validation_bars": 296,
+   "test_bars": 298
+  },
+  "approval": {
+   "required": true,
+   "apply_cli": "python -m wallexbot optimize --approve opt-20261023-152643",
+   "note": "اعمال، WTB_LIVE_ACK را باطل می‌کند؛ باید params و safetytests دوباره اجرا شوند."
+  }
+ },
+ "guardrails": {
+  "min_trades": 2,
+  "drawdown_cap_pct": 5.0,
+  "purge_bars": 8,
+  "test_used_for_selection": false,
+  "auto_apply": false,
+  "ai_can_change_params_directly": false
+ },
+ "status": "pending_approval"
+}

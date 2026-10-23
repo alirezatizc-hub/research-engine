@@ -17,6 +17,7 @@ wallex-ai-trader/logs/replay_test/
 wallex-ai-trader/logs/replay_test2/
 wallex-ai-trader/logs/synthetic*/
 wallex-ai-trader/logs/tuning/
+wallex-ai-trader/logs/optimizer/
 wallex-ai-trader/logs/replay_cli/
 wallex-ai-trader/logs/backtest_web/
 wallex-ai-trader/logs/backtest_real_learn/
@@ -24,6 +25,11 @@ wallex-ai-trader/logs/backtest_real_ai/
 wallex-ai-trader/logs/safety_tests.json
 wallex-ai-trader/logs/api_validation.json
 wallex-ai-trader/logs/ai_calls.jsonl
+wallex-ai-trader/logs/decisions.jsonl
+wallex-ai-trader/logs/trades.csv
+wallex-ai-trader/logs/state.json
+wallex-ai-trader/logs/equity.csv
+wallex-ai-trader/logs/*.jsonl
 wallex-ai-trader/logs/*.lock
 wallex-ai-trader/*.tmp
 

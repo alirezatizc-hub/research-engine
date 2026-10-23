@@ -27,7 +27,7 @@ python -m wallexbot fetch --days 30
 ```bash
 pip install -r requirements.txt
 
-# تست‌ها (۸۳ تست، ۱ skip)
+# تست‌ها (۱۰۱ تست، ۱ skip)
 python -m unittest discover -s tests -t .
 
 # بک‌تست rules-only (عدد جدول README)

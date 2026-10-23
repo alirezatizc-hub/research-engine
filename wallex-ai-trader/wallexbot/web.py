@@ -18,8 +18,6 @@ import dataclasses
 import hmac
 import json
 import os
-import re
-import shutil
 import subprocess
 import sys
 import threading
@@ -31,7 +29,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from .config import Config, save_env
-from .lock import InstanceLock
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "webui")
@@ -225,6 +222,11 @@ class App:
         self.started_at = time.time()
         self.autostart_speed = autostart_speed
         self._gate_cache = (0.0, None)
+        # چرخهٔ بهینه‌سازی (اجرای پس‌زمینه + پیشرفت زنده)
+        self._opt_lock = threading.Lock()
+        self._opt_stop = threading.Event()
+        self.opt = {"running": False, "run_id": None, "stage": "", "done": 0, "total": 0,
+                    "detail": "", "started": None, "ended": None, "error": None, "proposal": None}
 
     # ------------------------------------------------------------ helpers
     def fresh_cfg(self):
@@ -371,6 +373,86 @@ class App:
         write_outputs(out_dir, rep, tr, cv, ev)
         return {"report": rep, "funnel": format_funnel(rep), "dir": out_dir, "trades": len(tr)}
 
+    # ------------------------------------------------------------ optimizer
+    def optimizer_state(self):
+        from .optimizer import list_runs
+        with self._opt_lock:
+            st = dict(self.opt)
+        st["runs"] = list_runs(self.project_path())
+        st["ai_available"] = bool(self.cfg.ai_key() and self.cfg.ai_enabled)
+        st["data_ready"] = os.path.exists(self.project_path(self.cfg.data_dir, "manifest.json"))
+        st["demo"] = self.demo
+        st["read_only"] = self.read_only
+        return st
+
+    def start_optimizer(self, *, synthetic=False, ai=False, rounds=2, min_trades=2, purge=8,
+                        split=(0.6, 0.2, 0.2)):
+        with self._opt_lock:
+            if self.opt["running"]:
+                raise RuntimeError("چرخهٔ بهینه‌سازی همین حالا در حال اجراست")
+            self.opt = {"running": True, "run_id": None, "stage": "start", "done": 0, "total": 1,
+                        "detail": "آماده‌سازی", "started": time.time(), "ended": None, "error": None,
+                        "proposal": None}
+        self._opt_stop = threading.Event()
+        rounds = max(1, min(4, int(rounds or 2)))
+        run_id = "opt-" + datetime.now(tz=timezone.utc).strftime("%Y%m%d-%H%M%S")
+        with self._opt_lock:
+            self.opt["run_id"] = run_id
+
+        def progress(stage, done, total, detail=""):
+            with self._opt_lock:
+                self.opt.update(stage=stage, done=done, total=total, detail=detail)
+
+        def work():
+            from . import optimizer as O
+            try:
+                cfg = self.fresh_cfg()
+                if synthetic:
+                    from .backtest import synthetic as synth
+                    data = {s: synth(1500, seed=i + 1) for i, s in enumerate(cfg.symbols[:4])}
+                    label = "SYNTHETIC_NOT_EVIDENCE"
+                else:
+                    from .backtest import load_real_dataset
+                    data, man = load_real_dataset(self.project_path(cfg.data_dir), cfg.symbols)
+                    label = f"real:{man.get('source')}"
+                ai_obj = None
+                if ai:
+                    from .ai_agent import AIAgent
+                    agent = AIAgent(cfg)
+                    if not agent.enabled:
+                        raise RuntimeError("کلید/مدل AI تنظیم نشده است (یا AI خاموش است)")
+                    ai_obj = agent
+                rep = O.run_optimizer(data, cfg, data_label=label, split=split, rounds=rounds,
+                                      min_trades=max(1, int(min_trades)), purge_bars=int(purge),
+                                      ai=ai_obj, progress=progress, should_stop=self._opt_stop.is_set,
+                                      run_id=run_id, out_dir=self.project_path(O.OUT_ROOT, run_id))
+                with self._opt_lock:
+                    self.opt.update(running=False, ended=time.time(), stage="done",
+                                    proposal=rep.get("proposal"), status=rep.get("status"))
+            except O.OptimizerStopped:
+                with self._opt_lock:
+                    self.opt.update(running=False, ended=time.time(), stage="stopped",
+                                    detail="توسط کاربر متوقف شد", error=None)
+            except Exception as e:              # noqa: BLE001 — خطا به UI برمی‌گردد، سرور نمی‌افتد
+                with self._opt_lock:
+                    self.opt.update(running=False, ended=time.time(), stage="error",
+                                    error=f"{type(e).__name__}: {e}"[:400])
+
+        threading.Thread(target=work, name="optimizer", daemon=True).start()
+        return {"run_id": run_id, "rounds": rounds, "synthetic": bool(synthetic)}
+
+    def stop_optimizer(self):
+        self._opt_stop.set()
+        with self._opt_lock:
+            self.opt["detail"] = "درخواست توقف ثبت شد"
+        return {"ok": True}
+
+    def approve_optimizer(self, run_id, confirm=False, force=False):
+        from . import optimizer as O
+        return O.apply_proposal(run_id, root=self.project_path(), confirm=confirm, force=force,
+                                env_path=os.path.join(os.getcwd(), ".env"),
+                                log_dir=self.project_path("logs"), cfg=self.fresh_cfg())
+
     def run_tests(self, safety=False):
         cmd = ([sys.executable, "-m", "wallexbot", "safetytests"] if safety else
                [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "."])
@@ -516,6 +598,18 @@ def make_handler(app: App):
                 c = WallexMCP(cfg.mcp_url, timeout=cfg.mcp_timeout_s)
                 info = c.probe_market_tools()
                 return self._json(200, {"ok": True, **info})
+            if path in ("/api/optimizer", "/api/optimizer/status"):
+                return self._json(200, {"ok": True, **app.optimizer_state()})
+            if path == "/api/optimizer/runs":
+                from .optimizer import list_runs
+                return self._json(200, {"ok": True, "runs": list_runs(app.project_path())})
+            if path.startswith("/api/optimizer/") and path.count("/") == 3:
+                from .optimizer import load_run, OptimizerError
+                try:
+                    run = load_run(path.rsplit("/", 1)[-1], root=app.project_path())
+                except OptimizerError as e:
+                    return self._json(404, {"ok": False, "error": str(e)})
+                return self._json(200, {"ok": True, **run})
             if path == "/api/replay/status":
                 r = app.replay.snapshot() if app.replay else None
                 return self._json(200, {"ok": True, "replay": r})
@@ -552,8 +646,11 @@ def make_handler(app: App):
         def api_post(self, path, body):
             if path in ("/api/bot/start", "/api/bot/stop", "/api/flatten", "/api/reset-kill",
                         "/api/settings", "/api/replay/start", "/api/replay/stop",
-                        "/api/backtest/run", "/api/tests/run") and (app.read_only or (app.demo and path == "/api/settings")):
-                return self._json(403, {"ok": False, "error": "حالت فقط‌خواندنی/دمو اجازهٔ این عملیات را نمی‌دهد"})
+                        "/api/backtest/run", "/api/tests/run", "/api/optimizer/start",
+                        "/api/optimizer/stop", "/api/optimizer/approve"):
+                blocked = app.read_only or (app.demo and path in ("/api/settings", "/api/optimizer/approve"))
+                if blocked:
+                    return self._json(403, {"ok": False, "error": "حالت فقط‌خواندنی/دمو اجازهٔ این عملیات را نمی‌دهد"})
             if path == "/api/bot/start":
                 mode = str(body.get("mode") or "shadow")
                 if app.demo:
@@ -616,6 +713,24 @@ def make_handler(app: App):
                     synthetic=bool(body.get("synthetic")), learn=bool(body.get("learn")),
                     ai_gate=bool(body.get("ai_gate"))))
                 return self._json(200, {"ok": True, "job": j})
+            if path == "/api/optimizer/start":
+                return self._json(200, {"ok": True, **app.start_optimizer(
+                    synthetic=bool(body.get("synthetic")), ai=bool(body.get("ai")),
+                    rounds=int(body.get("rounds") or 2), min_trades=int(body.get("min_trades") or 2),
+                    purge=int(body.get("purge") or 8))})
+            if path == "/api/optimizer/stop":
+                return self._json(200, app.stop_optimizer())
+            if path == "/api/optimizer/approve":
+                run_id = str(body.get("run_id") or "").strip()
+                if not run_id:
+                    return self._json(400, {"ok": False, "error": "run_id لازم است"})
+                if not body.get("confirm"):
+                    return self._json(400, {"ok": False, "error": "اعمال نیازمند تأیید صریح است (confirm=true)"})
+                try:
+                    res = app.approve_optimizer(run_id, confirm=True, force=bool(body.get("force")))
+                except Exception as e:          # noqa: BLE001
+                    return self._json(400, {"ok": False, "error": f"{type(e).__name__}: {e}"})
+                return self._json(200, res)
             if path == "/api/tests/run":
                 j = app.job("safetytests" if body.get("safety") else "unit", lambda: app.run_tests(bool(body.get("safety"))))
                 return self._json(200, {"ok": True, "job": j})
@@ -625,7 +740,6 @@ def make_handler(app: App):
             return self._json(404, {"ok": False, "error": "unknown endpoint"})
 
         def save_settings(self, body):
-            cfg = app.fresh_cfg()
             mapping = {
                 "wallex_api_key": "WALLEX_API_KEY", "ai_api_key": "WTB_AI_API_KEY",
                 "ai_provider": "WTB_AI_PROVIDER", "ai_model": "WTB_AI_MODEL", "ai_base_url": "WTB_AI_BASE_URL",

@@ -156,3 +156,14 @@ canvas{width:100%;display:block;border-radius:12px}
   main{padding:14px}
   .tabs{padding:10px 14px 0;overflow:auto;flex-wrap:nowrap}
 }
+
+/* ---- optimizer ---- */
+.progress{height:8px;border-radius:999px;background:#0a1423;border:1px solid var(--line);overflow:hidden;margin:14px 0 8px}
+.progress-bar{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#22d3a6,#37bdf8);transition:width .4s ease}
+.opt-pick{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.opt-pick-name{font-weight:800;font-size:15px;color:var(--acc)}
+.opt-windows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.opt-windows>div{background:#0a1423;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px}
+.row-best{background:rgba(34,211,166,.06)}
+.row-best td:first-child{box-shadow:inset 3px 0 0 var(--acc2)}
+@media (max-width:760px){.opt-windows{grid-template-columns:1fr}}

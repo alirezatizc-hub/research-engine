@@ -41,6 +41,7 @@
   <button class="tab active" data-tab="dashboard">داشبورد</button>
   <button class="tab" data-tab="trades">معاملات و لاگ تصمیم</button>
   <button class="tab" data-tab="backtest">بک‌تست و شبیه‌سازی</button>
+  <button class="tab" data-tab="optimizer">بهینه‌سازی</button>
   <button class="tab" data-tab="settings">تنظیمات و اتصال</button>
   <button class="tab" data-tab="tools">ابزارها و MCP</button>
   <button class="tab" data-tab="help">راهنما</button>
@@ -160,6 +161,58 @@
       <div class="table-wrap"><table id="btTrades"><thead><tr>
         <th>نماد</th><th>نوع</th><th>ورود</th><th>خروج</th><th>قیمت ورود</th><th>قیمت خروج</th><th>سود (تومان)</th><th>درصد</th><th>دلیل</th>
       </tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ================= OPTIMIZER ================= -->
+  <section class="panel" id="tab-optimizer">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>چرخهٔ بهینه‌سازی</h2><span class="muted">بک‌تست → تحلیل → سناریوها → اعتبارسنجی</span></div>
+        <div class="form-grid">
+          <label>داده
+            <select id="optData">
+              <option value="real">واقعی (data/)</option>
+              <option value="synthetic">مصنوعی (فقط تست دود)</option>
+            </select>
+          </label>
+          <label>تعداد دور <input id="optRounds" type="number" min="1" max="4" value="2"></label>
+          <label>حداقل معامله در هر پنجره <input id="optMinTrades" type="number" min="1" value="2"></label>
+          <label class="check"><input type="checkbox" id="optAI"> تحلیل و پیشنهاد با AI</label>
+        </div>
+        <div class="row">
+          <button class="btn btn-primary" id="runOptimizer">اجرای چرخه</button>
+          <button class="btn btn-ghost" id="stopOptimizer">توقف</button>
+        </div>
+        <div class="progress"><div id="optBar" class="progress-bar"></div></div>
+        <div id="optJob" class="muted small">آماده — داده باید حداقل چند هزار کندل داشته باشد (۳۰ روز توصیه می‌شود).</div>
+        <div class="info-box">
+          پنجرهٔ آزمون در انتخاب پارامتر نقشی ندارد و به AI هم نشان داده نمی‌شود. AI فقط پیشنهاد می‌دهد؛
+          هر پیشنهاد با کران‌های سخت سنجیده می‌شود و هیچ پارامتری خودکار اعمال نمی‌شود.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>پیشنهاد برای تأیید</h2><span id="optBadge" class="pill pill-muted">—</span></div>
+        <div id="optProposal" class="result-box">هنوز اجرایی ثبت نشده است.</div>
+        <div class="row">
+          <button class="btn btn-warn" id="approveOpt" disabled>تأیید و اعمال در .env</button>
+          <span class="muted small">اعمال، <code>WTB_LIVE_ACK</code> را باطل می‌کند.</span>
+        </div>
+        <div id="optApplyResult" class="result-box hidden"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>سناریوها</h2><span class="muted">انتخاب با آموزش · رتبه‌بندی با اعتبارسنجی</span></div>
+      <div class="table-wrap"><table id="optTable"><thead><tr>
+        <th>دور</th><th>سناریو</th><th>منبع</th><th>وضعیت</th><th>امتیاز</th>
+        <th>بازده آموزش</th><th>افت آموزش</th><th>معاملات</th>
+        <th>بازده اعتبارسنجی</th><th>افت اعتبارسنجی</th><th>معاملات</th><th>دلیل رد</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="optEmpty" class="empty">هنوز چرخه‌ای اجرا نشده است.</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>اجراهای قبلی</h2></div>
+      <div id="optRuns" class="feed"></div>
     </div>
   </section>
 

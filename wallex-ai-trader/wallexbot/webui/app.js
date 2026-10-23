@@ -53,6 +53,7 @@
     t.classList.add("active");
     $("#tab-" + t.dataset.tab).classList.add("active");
     if (t.dataset.tab === "backtest") loadBacktest($("#btPick").value);
+    if (t.dataset.tab === "optimizer") loadOptimizer();
     if (t.dataset.tab === "trades") { loadTrades(); loadDecisions(); }
     if (t.dataset.tab === "settings") { loadSettings(); loadGate(); }
     if (t.dataset.tab === "tools") { loadCommands(); }
@@ -505,12 +506,152 @@
     try { showTestJob(await api("/api/tests/run", { body: { safety: true } })); } catch (e) { toast(e.message, "bad"); }
   });
 
+
+  /* ---------------- optimizer ---------------- */
+  let optPoll = null;
+  let lastOpt = null;
+  function optProposalHtml(p) {
+    if (!p) return 'هنوز پیشنهادی ثبت نشده است.';
+    if (p.status !== "pending_approval" || !p.params) {
+      return `<div class="gate-item bad">${esc(p.reason || "هیچ گزینه‌ای تأیید نشد")}</div>`;
+    }
+    const m = (o) => `<b>${o && o.return_pct !== undefined ? pct(o.return_pct) : "—"}</b> · افت ${o && o.max_drawdown_pct !== undefined ? o.max_drawdown_pct + "٪" : "—"} · ${o && o.trades !== undefined ? o.trades + " معامله" : "—"}`;
+    const warn = p.warning ? `<div class="gate-item bad">⚠️ ${esc(p.warning)}</div>` : "";
+    const diff = Object.entries(p.diff_vs_current || {}).map(([k, v]) =>
+      `<div class="gate-item">${esc(k)}: <code>${esc(v.from)}</code> → <code>${esc(v.to)}</code></div>`).join("");
+    return `
+      <div class="opt-pick">
+        <div class="opt-pick-name">${esc(p.selected)} <span class="muted small">(${esc(p.source || "")})</span></div>
+        <div class="muted small">${esc(p.note || "")}</div>
+      </div>
+      <div class="opt-windows">
+        <div><span class="muted small">آموزش</span><br>${m(p.train)}</div>
+        <div><span class="muted small">اعتبارسنجی</span><br>${m(p.validation)}</div>
+        <div><span class="muted small">آزمون دست‌نخورده</span><br>${m(p.held_out_test)}</div>
+      </div>
+      ${warn}
+      ${p.ai && p.ai.diagnosis ? `<div class="gate-item">تحلیل AI: ${esc(p.ai.diagnosis)}</div>` : ""}
+      ${diff}`;
+  }
+  function renderOptimizer(st) {
+    lastOpt = st;
+    const running = !!st.running;
+    $("#runOptimizer").disabled = running;
+    $("#stopOptimizer").disabled = !running;
+    const total = Math.max(1, st.total || 1);
+    const pctDone = Math.min(100, Math.round(100 * (st.done || 0) / total));
+    $("#optBar").style.width = (running ? Math.max(4, pctDone) : (st.stage === "done" ? 100 : 0)) + "%";
+    $("#optJob").textContent = running
+      ? `در حال اجرا… ${st.stage || ""} ${st.done || 0}/${st.total || 0} ${st.detail ? "· " + st.detail : ""}`
+      : (st.error ? "خطا: " + st.error : (st.run_id ? `آخرین اجرا: ${st.run_id} (${st.stage || "—"})` : "آماده"));
+    const prop = st.proposal || ((st.runs || [])[0] || null);
+    $("#optProposal").innerHTML = optProposalHtml(prop);
+    const badge = $("#optBadge");
+    if (st.error) { badge.textContent = "خطا"; badge.className = "pill pill-bad"; }
+    else if (running) { badge.textContent = "در حال اجرا"; badge.className = "pill pill-warn"; }
+    else if (prop && prop.status === "pending_approval") { badge.textContent = "منتظر تأیید"; badge.className = "pill pill-warn"; }
+    else if (prop && prop.status === "applied") { badge.textContent = "اعمال‌شده"; badge.className = "pill pill-good"; }
+    else { badge.textContent = "—"; badge.className = "pill pill-muted"; }
+    const locked = !!(st.demo || st.read_only);
+    $("#approveOpt").disabled = !(prop && prop.status === "pending_approval") || running || locked;
+    $("#approveOpt").title = locked ? "در حالت دمو/فقط‌خواندنی اعمال غیرفعال است" : "";
+    const runs = st.runs || [];
+    $("#optRuns").innerHTML = runs.length
+      ? runs.slice(0, 8).map(r => `<div class="gate-item ${r.status === "applied" ? "ok" : ""}">
+          <b>${esc(r.run_id)}</b> · ${esc(r.selected || "—")} · وضعیت: ${esc(r.status || "—")}
+          · اعتبارسنجی: ${r.validation && r.validation.return_pct !== undefined ? r.validation.return_pct + "٪" : "—"}
+          · آزمون: ${r.held_out_test && r.held_out_test.return_pct !== undefined ? r.held_out_test.return_pct + "٪" : "—"}
+        </div>`).join("")
+      : `<div class="muted small">—</div>`;
+  }
+  async function loadOptimizer() {
+    try {
+      const st = await api("/api/optimizer");
+      renderOptimizer(st);
+      const rid = st.run_id || ((st.runs || [])[0] || {}).run_id;
+      if (rid) {
+        try {
+          const rep = await api("/api/optimizer/" + encodeURIComponent(rid));
+          renderOptTable(rep.report);
+        } catch (_) { /* گزارش هنوز نوشته نشده */ }
+      }
+      if (st.running) pollOptimizer();
+    } catch (e) { $("#optJob").textContent = e.message; }
+  }
+  function renderOptTable(rep) {
+    if (!rep || !rep.scenarios) { $("#optEmpty").classList.remove("hidden"); return; }
+    $("#optEmpty").classList.add("hidden");
+    const rows = rep.scenarios.slice().sort((a, b) => ((b.score ?? -1e9) - (a.score ?? -1e9)));
+    $("#optTable tbody").innerHTML = rows.map(r => {
+      const tr = r.train || {}, va = r.validation || {};
+      return `<tr class="${r.name === (rep.proposal || {}).selected ? "row-best" : ""}">
+        <td>${esc(r.round)}</td><td><b>${esc(r.name)}</b></td><td>${esc(r.source)}</td>
+        <td>${esc(r.status)}</td><td class="num">${r.score ?? "—"}</td>
+        <td class="num ${tone(tr.return_pct)}">${tr.return_pct !== undefined && tr.return_pct !== null ? pct(tr.return_pct) : "—"}</td>
+        <td class="num">${tr.max_drawdown_pct ?? "—"}</td><td class="num">${tr.trades ?? "—"}</td>
+        <td class="num ${tone(va.return_pct)}">${va.return_pct !== undefined && va.return_pct !== null ? pct(va.return_pct) : "—"}</td>
+        <td class="num">${va.max_drawdown_pct ?? "—"}</td><td class="num">${va.trades ?? "—"}</td>
+        <td class="muted small">${esc(va.reject || r.issues || "")}</td></tr>`;
+    }).join("");
+  }
+  async function pollOptimizer() {
+    if (optPoll) clearTimeout(optPoll);
+    const tick = async () => {
+      try {
+        const st = await api("/api/optimizer");
+        renderOptimizer(st);
+        if (st.running) { optPoll = setTimeout(tick, 1500); return; }
+        const rid = st.run_id || ((st.runs || [])[0] || {}).run_id;
+        if (rid) {
+          try { renderOptTable((await api("/api/optimizer/" + encodeURIComponent(rid))).report); } catch (_) { /* noop */ }
+        }
+        if (st.error) toast("بهینه‌سازی خطا داد: " + st.error, "bad");
+        else toast("چرخهٔ بهینه‌سازی تمام شد", "good");
+      } catch (e) { optPoll = setTimeout(tick, 3000); }
+    };
+    optPoll = setTimeout(tick, 800);
+  }
+  $("#runOptimizer").addEventListener("click", async () => {
+    const synthetic = $("#optData").value === "synthetic";
+    if (synthetic && !confirm("دادهٔ مصنوعی فقط برای تست دود چرخه است و هیچ اعتبار آماری ندارد. ادامه؟")) return;
+    $("#runOptimizer").disabled = true;
+    try {
+      const j = await api("/api/optimizer/start", { body: {
+        synthetic, ai: $("#optAI").checked,
+        rounds: Number($("#optRounds").value) || 2,
+        min_trades: Number($("#optMinTrades").value) || 2 } });
+      toast("چرخه شروع شد: " + (j.run_id || ""), "good");
+      pollOptimizer();
+    } catch (e) { $("#runOptimizer").disabled = false; toast(e.message, "bad"); }
+  });
+  $("#stopOptimizer").addEventListener("click", async () => {
+    try { await api("/api/optimizer/stop", { body: {} }); toast("درخواست توقف ثبت شد"); }
+    catch (e) { toast(e.message, "bad"); }
+  });
+  $("#approveOpt").addEventListener("click", async () => {
+    const id = (lastOpt && lastOpt.run_id) || prompt("شناسهٔ اجرا (run-id) را وارد کنید:");
+    if (!id) return;
+    if (!confirm("این پیشنهاد در .env نوشته شود و WTB_LIVE_ACK باطل شود؟")) return;
+    const box = $("#optApplyResult"); box.classList.remove("hidden");
+    try {
+      const j = await api("/api/optimizer/approve", { body: { run_id: id, confirm: true } });
+      box.className = "result-box good";
+      box.innerHTML = `<pre style="margin:0;white-space:pre-wrap">${esc(JSON.stringify(j, null, 2))}</pre>`;
+      toast("اعمال شد؛ params و safetytests را دوباره اجرا کنید", "good");
+      loadOptimizer();
+    } catch (e) {
+      box.className = "result-box bad";
+      box.textContent = e.message + (e.payload && e.payload.error ? "" : "");
+    }
+  });
+
   /* ---------------- boot ---------------- */
   window.addEventListener("resize", () => {
     if (lastCurve) drawChart($("#equityChart"), lastCurve, { label: "equity" });
   });
   refreshStatus();
   loadProfiles();
+  loadOptimizer();
   loadDecisions();
   loadTrades();
   loadSettings();
