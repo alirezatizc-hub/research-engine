@@ -580,9 +580,14 @@ def _build_proposal(run_id, base_cfg, best, final, wmeta, data, data_label, ai_t
             if base_params.get(k) != v}
     val_ret = (best["validation"] or {}).get("return_pct")
     test_ret = test.get("return_pct")
-    recommend = bool(val_ret is not None and val_ret > 0 and (test_ret is None or test_ret > 0))
+    is_synthetic = not str(data_label).startswith("real:")
+    recommend = bool(val_ret is not None and val_ret > 0 and (test_ret is None or test_ret > 0)
+                     and not is_synthetic)
     warning = None
-    if val_ret is None or val_ret <= 0:
+    if is_synthetic:
+        warning = ("این اجرا روی دادهٔ مصنوعی (SYNTHETIC_NOT_EVIDENCE) انجام شده است؛ هیچ ادعای آماری ندارد و "
+                   "برای اعمال باید چرخه روی دادهٔ واقعی ۳۰ روزه (`fetch --days 30`) اجرا شود.")
+    elif val_ret is None or val_ret <= 0:
         warning = (f"بازدهی پنجرهٔ اعتبارسنجی {val_ret}٪ است؛ این گزینه «بهترین از بدها» است و "
                    "اعمال آن توصیه نمی‌شود. تا وقتی هیچ سناریویی در اعتبارسنجی مثبت نیست، "
                    "ماندن روی تنظیمات فعلی یا معاملهٔ کمتر گزینهٔ درست‌تری است.")
@@ -598,7 +603,7 @@ def _build_proposal(run_id, base_cfg, best, final, wmeta, data, data_label, ai_t
         "held_out_test": {k: test.get(k) for k in ("return_pct", "max_drawdown_pct", "trades", "profit_factor", "stability_pct")},
         "baseline_on_test": {k: (final.get("baseline") or {}).get(k) for k in ("return_pct", "max_drawdown_pct", "trades")},
         "score": best.get("score"),
-        "recommend_apply": recommend, "warning": warning,
+        "recommend_apply": recommend, "warning": warning, "synthetic": is_synthetic,
         "ai": {"used": bool(ai_trace), "rounds": len(ai_trace),
                "diagnosis": ai_trace[-1].get("diagnosis") if ai_trace else None},
         "data": {"label": data_label, "fingerprint": data_fingerprint(data), "bars": wmeta["bars"],
@@ -721,7 +726,7 @@ def format_report(report):
                     f"test {p['held_out_test']['return_pct']}%",
                 f"params: {json.dumps(p['params'], ensure_ascii=False)}"]
         if not p.get("recommend_apply", True):
-            out.append("WARNING: validation return is not positive — applying is NOT recommended")
+            out.append("WARNING: applying is NOT recommended — " + str(p.get("warning") or ""))
         out.append(f"apply after review: {p['approval']['apply_cli']}")
     else:
         out += ["", f"NO CANDIDATE: {p.get('reason', '')}"]
@@ -814,6 +819,9 @@ def apply_proposal(run_id, *, root=None, env_path=None, log_dir=None, confirm=Fa
         raise OptimizerError(f"این پیشنهاد قبلاً اعمال شده است ({run_id})")
     if prop.get("status") != "pending_approval" or not prop.get("params"):
         raise OptimizerError("این اجرا پیشنهاد قابل‌اعمالی ندارد")
+    if prop.get("synthetic") and not force:
+        raise OptimizerError("این پیشنهاد روی دادهٔ مصنوعی ساخته شده و قابل اعمال نیست؛ ابتدا "
+                             "`python -m wallexbot fetch --days 30` و سپس `optimize --ai` روی دادهٔ واقعی")
     if prop.get("recommend_apply") is False and not force:
         raise OptimizerError("این پیشنهاد در اعتبارسنجی مثبت نیست و اعمال توصیه نمی‌شود؛ "
                              "برای اعمال آگاهانه از --force (یا force=true) استفاده کنید: " + str(prop.get("warning") or ""))

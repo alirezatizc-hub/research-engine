@@ -100,8 +100,12 @@ logs/optimizer/<run-id>/
 برچسب `SYNTHETIC_NOT_EVIDENCE`) و `real_data_blocked.txt` که پیام مسدودشدن اجرای واقعی روی ۱۹۲ کندل را
 نشان می‌دهد.
 
-`proposal.json` تا زمانی که انسان تأیید نکند `status: pending_approval` است. اگر بازدهی پنجرهٔ
-اعتبارسنجی مثبت نباشد، `recommend_apply: false` و هشدار ثبت می‌شود و اعمال، `--force` می‌خواهد.
+`proposal.json` تا زمانی که انسان تأیید نکند `status: pending_approval` است. `recommend_apply: false`
+(و نیاز به `--force` برای اعمال) در سه حالت:
+
+1. اجرا روی دادهٔ **مصنوعی** باشد (`SYNTHETIC_NOT_EVIDENCE`) — هرگز به‌عنوان نتیجهٔ واقعی اعمال نمی‌شود.
+2. بازدهی پنجرهٔ **اعتبارسنجی** مثبت نباشد («بهترین از بدها»).
+3. اعتبارسنجی مثبت باشد ولی روی پنجرهٔ **آزمون** منفی شود (نشانهٔ بیش‌برازش).
 
 ## ۶) تأیید و اعمال
 
@@ -139,7 +143,7 @@ python -m wallexbot optimize --approve opt-20261023-1530 --yes   # اعمال پ
 
 ## ۸) تست‌ها
 
-`tests/test_optimizer.py` (۱۷ تست):
+`tests/test_optimizer.py` (۱۸ تست):
 
 - سه پنجرهٔ پیوسته و بدون هم‌پوشانی؛ شکاف purge؛ `context` فقط گذشته.
 - رد دادهٔ کوتاه با پیام راهنما.

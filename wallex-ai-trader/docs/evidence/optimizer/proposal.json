@@ -1,5 +1,5 @@
 {
- "run_id": "opt-20261023-152411",
+ "run_id": "opt-20261023-152643",
  "status": "pending_approval",
  "selected": "bb_max_pos+0.05",
  "source": "local_search",
@@ -62,8 +62,9 @@
   "trades": 8
  },
  "score": -0.831,
- "recommend_apply": true,
- "warning": null,
+ "recommend_apply": false,
+ "warning": "این اجرا روی دادهٔ مصنوعی (SYNTHETIC_NOT_EVIDENCE) انجام شده است؛ هیچ ادعای آماری ندارد و برای اعمال باید چرخه روی دادهٔ واقعی ۳۰ روزه (`fetch --days 30`) اجرا شود.",
+ "synthetic": true,
  "ai": {
   "used": false,
   "rounds": 0,
@@ -79,7 +80,7 @@
  },
  "approval": {
   "required": true,
-  "apply_cli": "python -m wallexbot optimize --approve opt-20261023-152411",
+  "apply_cli": "python -m wallexbot optimize --approve opt-20261023-152643",
   "note": "اعمال، WTB_LIVE_ACK را باطل می‌کند؛ باید params و safetytests دوباره اجرا شوند."
  }
 }

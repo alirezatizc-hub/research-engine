@@ -7,7 +7,7 @@
 
 | موضوع | نتیجه |
 |---|---|
-| تست‌ها | `100` تست، `1` skip (نیازمند پاسخ واقعی API)، ~۷ ثانیه |
+| تست‌ها | `101` تست، `1` skip (نیازمند پاسخ واقعی API)، ~۷ ثانیه |
 | بک‌تست دادهٔ واقعی | ۸ نماد × ۱۹۲ کندل ۱۵دقیقه‌ای (۲ روز) — بازده **−۰٫۹۷٪**، افت حداکثر **۱٫۷۱٪**، **۴** معامله، نرخ برد ۵۰٪ |
 | Replay (همان داده، حلقهٔ کامل همراه با تسویهٔ پایان چالش) | **۴** معامله، **−۱٫۲۵٪**، افت **۱٫۴۶٪**، ۱ برد/۳ باخت، تسویهٔ کامل به تومان |
 | پنل | `python -m wallexbot ui --demo` — بدون کلید، بدون اینترنت، روی دادهٔ ضبط‌شده |
@@ -244,7 +244,7 @@ wallex-ai-trader/
 ├── wallexbot/            موتور (config, exchange, schemas, strategy, risk, orders, executors,
 │                         bot, backtest, replay, learner, ai_agent, mcp, safety, web)
 │   └── webui/            پنل (HTML/CSS/JS بدون build)
-├── tests/                ۱۰۰ تست + fake exchange + fixtures مستندات
+├── tests/                ۱۰۱ تست + fake exchange + fixtures مستندات
 ├── data/                 کندل واقعی ۱۵m + manifest (۸ نماد)
 ├── logs/backtest_real/   گزارش بک‌تست قابل‌بازتولید (JSON/CSV)
 ├── docs/                 مستندات فارسی داوری

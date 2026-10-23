@@ -227,6 +227,16 @@ class Apply(unittest.TestCase):
             O.apply_proposal(self.run_id, root=self.root, env_path=self.env, log_dir=self.logs,
                              confirm=True, cfg=self.cfg)
 
+    def test_synthetic_proposal_cannot_be_applied_without_force(self):
+        self.prop.update({"synthetic": True, "recommend_apply": False,
+                          "warning": "SYNTHETIC_NOT_EVIDENCE"})
+        self.write_prop()
+        with self.assertRaises(O.OptimizerError) as cm:
+            O.apply_proposal(self.run_id, root=self.root, env_path=self.env, log_dir=self.logs,
+                             confirm=True, cfg=self.cfg)
+        self.assertIn("مصنوعی", str(cm.exception))
+        self.assertNotIn("WTB_RSI_BUY=44", open(self.env, encoding="utf-8").read())
+
     def test_negative_validation_needs_force(self):
         self.prop["recommend_apply"] = False
         self.prop["warning"] = "validation negative"
