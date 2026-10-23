@@ -1,0 +1,88 @@
+{
+  "kind": "replay_evidence",
+  "generated_at": "2026-10-23",
+  "note": "اجرای کامل حلقهٔ ربات روی دادهٔ واقعی ۲روزه با ShadowExecutor؛ خروجی خام در logs/replay_test/ (خارج از گیت نگه داشته می‌شود).",
+  "data": {
+    "source": "api.wallex.ir/v1/udf/history",
+    "symbols": 8,
+    "resolution_min": 15,
+    "candles_per_symbol": 192,
+    "warmup_bars": 110,
+    "window_start_utc": "2026-10-20T14:00:00+00:00",
+    "window_end_utc": "2026-10-22T13:45:00+00:00"
+  },
+  "result": {
+    "equity": 4937523.93,
+    "return_pct": -1.25,
+    "realized_pnl": -62476.07,
+    "trades": 4,
+    "wins": 1,
+    "losses": 3,
+    "fees_paid": 24235.7,
+    "max_drawdown_pct": 1.46,
+    "flat_check": {
+      "flat": true,
+      "leftovers": {},
+      "source": "shadow_ledger"
+    }
+  },
+  "trades": [
+    {
+      "symbol": "ADATMN",
+      "kind": "breakout",
+      "open_ts": "2026-10-21T18:30:30+00:00",
+      "close_ts": "2026-10-22T02:15:18+00:00",
+      "entry": "61434.91313959999",
+      "exit": "59522.5754424",
+      "qty": "14.242715669",
+      "cost_tmn": "878062",
+      "proceeds_tmn": "844796",
+      "pnl_tmn": "-33267",
+      "pnl_pct": "-3.789",
+      "exit_reason": "stop_loss"
+    },
+    {
+      "symbol": "TRXTMN",
+      "kind": "dip",
+      "open_ts": "2026-10-21T23:45:55+00:00",
+      "close_ts": "2026-10-22T13:15:08+00:00",
+      "entry": "88515.78415679999",
+      "exit": "89836.08918479999",
+      "qty": "9.8382196105",
+      "cost_tmn": "873886",
+      "proceeds_tmn": "880734",
+      "pnl_tmn": "6848",
+      "pnl_pct": "0.784",
+      "exit_reason": "end_of_challenge"
+    },
+    {
+      "symbol": "XRPTMN",
+      "kind": "dip",
+      "open_ts": "2026-10-22T00:00:35+00:00",
+      "close_ts": "2026-10-22T13:15:11+00:00",
+      "entry": "365508.1417988",
+      "exit": "358041.1832172",
+      "qty": "2.3800719869",
+      "cost_tmn": "872980",
+      "proceeds_tmn": "849181",
+      "pnl_tmn": "-23799",
+      "pnl_pct": "-2.726",
+      "exit_reason": "end_of_challenge"
+    },
+    {
+      "symbol": "ETHTMN",
+      "kind": "dip",
+      "open_ts": "2026-10-22T02:30:36+00:00",
+      "close_ts": "2026-10-22T13:15:13+00:00",
+      "entry": "654326791.8203015",
+      "exit": "649624115.7682416",
+      "qty": "0.0013228713",
+      "cost_tmn": "868620",
+      "proceeds_tmn": "856361",
+      "pnl_tmn": "-12258",
+      "pnl_pct": "-1.411",
+      "exit_reason": "end_of_challenge"
+    }
+  ],
+  "note_limits": "۴ معامله روی ۲ روز داده؛ هیچ ادعای آماری/سودآوری ندارد."
+}

@@ -118,7 +118,7 @@ def tcfg(**kw):
     base = dict(mode="live", symbols=["BTCTMN"], ai_enabled=False, rules_min_score=0.0, min_score=0.0,
                 min_atr_pct=0.0, rsi_buy=60.0, bb_max_pos=0.5, max_trend_dev=1.0, min_notional=1000.0,
                 state_path=os.path.join(d, "state.json"), log_dir=d, fill_timeout_s=5, order_poll_s=1.0,
-                cancel_confirm_tries=3, dust_tmn=1000.0)
+                cancel_confirm_tries=3, dust_tmn=1000.0, ai_log_path=os.path.join(d, "ai_calls.jsonl"))
     base.update(kw)
     return Config(**base)
 

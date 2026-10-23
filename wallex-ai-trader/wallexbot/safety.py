@@ -90,7 +90,7 @@ class LiveGate:
         f += [f"config: {e}" for e in c.validate()]
         if c.live_ack != c.fingerprint():
             f.append(f"WTB_LIVE_ACK نادرست/خالی؛ پس از مرور پارامترها (python -m wallexbot params) مقدار {c.fingerprint()} را تنظیم کنید")
-        if c.ai_required_live and not (c.ai_enabled and c.anthropic_api_key):
+        if c.ai_required_live and not (c.ai_enabled and c.ai_key()):
             f.append("کلید/فعال‌سازی AI برای live الزامی است (یا WTB_AI_REQUIRED_LIVE=false)")
         if not c.wallex_api_key:
             f.append("WALLEX_API_KEY خالی است")

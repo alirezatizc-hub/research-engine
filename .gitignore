@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Secrets / local config
+.env
+*.env.local
+*.key
+
+# Runtime state and generated logs (evidence logs under logs/backtest_real stay tracked)
+wallex-ai-trader/state.json
+wallex-ai-trader/logs/replay/
+wallex-ai-trader/logs/replay_test/
+wallex-ai-trader/logs/replay_test2/
+wallex-ai-trader/logs/synthetic*/
+wallex-ai-trader/logs/tuning/
+wallex-ai-trader/logs/replay_cli/
+wallex-ai-trader/logs/backtest_web/
+wallex-ai-trader/logs/backtest_real_learn/
+wallex-ai-trader/logs/backtest_real_ai/
+wallex-ai-trader/logs/safety_tests.json
+wallex-ai-trader/logs/api_validation.json
+wallex-ai-trader/logs/ai_calls.jsonl
+wallex-ai-trader/logs/*.lock
+wallex-ai-trader/*.tmp
+
+# Live API samples captured by selfcheck (may contain account balances)
+wallex-ai-trader/tests/fixtures/real/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

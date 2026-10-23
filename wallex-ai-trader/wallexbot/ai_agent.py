@@ -1,7 +1,19 @@
 """عامل AI: دروازه ورود، مرور رژیم بازار، و تحلیل پس از معامله (reflection).
-قواعد: خروجی باید JSON با نوع‌های دقیق باشد؛ هر خطا/نامعتبر => None (fail-closed). AI فقط می‌تواند سخت‌گیرتر شود."""
+
+قواعد طراحی:
+- خروجی باید JSON با نوع‌های دقیق باشد؛ هر خطا/خروجی نامعتبر => None (fail-closed).
+- AI هرگز پارامتر ریسک را عوض نمی‌کند و فقط می‌تواند «سخت‌گیرتر» شود (رد ورود، حجم ≤۱، حالت ریسک).
+- دو provider پشتیبانی می‌شود: Anthropic و هر سرویس سازگار با OpenAI (OpenAI/OpenRouter/پروکسی‌های ایران).
+- هر فراخوانی در logs/ai_calls.jsonl با مدل، تأخیر، هش پرامپت و پاسخ ثبت می‌شود (قابل ممیزی برای داوران).
+"""
 from __future__ import annotations
-import json, math, logging
+import hashlib
+import json
+import logging
+import math
+import os
+import time
+
 import requests
 
 log = logging.getLogger("wtb")
@@ -10,6 +22,7 @@ SYS_GATE = """You are the decision agent of a spot-only crypto trading bot on th
 A rule-based engine proposed a LONG entry. Judge it using the numeric features, market snapshot, recent trades and "lessons"
 (your own past post-trade analyses). Round-trip cost is about 0.7%, so reject weak-edge setups, falling-knife dips,
 thin/wide books, signals contradicting the market snapshot, and setups resembling past mistakes in the lessons.
+Rules you must respect: spot only, no leverage, one entry per signal, max size multiplier 1.0.
 Reply with ONLY compact JSON: {"approve": true|false, "confidence": 0..1, "size_mult": 0.5..1.0, "reason": "<=40 words"}"""
 
 SYS_REVIEW = """You supervise a spot crypto trading bot. Given the market snapshot, open positions, recent trades and equity,
@@ -69,46 +82,150 @@ def validate_reflect(o):
 class AIAgent:
     def __init__(self, cfg, transport=None):
         self.cfg = cfg
-        self.enabled = bool(cfg.ai_enabled and cfg.anthropic_api_key)
+        self.enabled = bool(cfg.ai_enabled and cfg.ai_key())
         self._transport = transport or self._http
+        self._cache = {}
+        self.last_error = None
+        self.last_meta = {}
         if not self.enabled:
             log.warning("AI غیرفعال/بدون کلید => rules-only (امتیاز >= %s)", cfg.rules_min_score)
 
+    # ------------------------------------------------------------ providers
+    @property
+    def provider(self):
+        return (self.cfg.ai_provider or "anthropic").lower()
+
+    def _endpoint(self):
+        if self.provider == "openai":
+            base = (self.cfg.ai_base_url or "https://api.openai.com/v1").rstrip("/")
+            return base + "/chat/completions"
+        base = (self.cfg.ai_base_url or "https://api.anthropic.com").rstrip("/")
+        return base + "/v1/messages"
+
     def _http(self, system, payload):
+        """فراخوانی واقعی provider؛ خروجی متن خام مدل."""
+        user = json.dumps(payload, ensure_ascii=False, default=str)
+        if self.provider == "openai":
+            body = {"model": self.cfg.ai_model, "temperature": 0, "max_tokens": self.cfg.ai_max_tokens,
+                    "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+            r = requests.post(
+                self._endpoint(),
+                headers={"Authorization": f"Bearer {self.cfg.ai_key()}", "Content-Type": "application/json"},
+                json=body,
+                timeout=self.cfg.ai_timeout_s,
+            )
+            if r.status_code == 400 and "max_tokens" in (r.text or ""):
+                # مدل‌های جدید OpenAI به‌جای max_tokens از max_completion_tokens استفاده می‌کنند.
+                body.pop("max_tokens", None)
+                body["max_completion_tokens"] = self.cfg.ai_max_tokens
+                r = requests.post(
+                    self._endpoint(),
+                    headers={"Authorization": f"Bearer {self.cfg.ai_key()}", "Content-Type": "application/json"},
+                    json=body, timeout=self.cfg.ai_timeout_s,
+                )
+            if r.status_code >= 400:
+                raise RuntimeError(f"HTTP {r.status_code}: {(r.text or '')[:200]}")
+            data = r.json()
+            msg = (data.get("choices") or [{}])[0].get("message", {})
+            content = msg.get("content", "")
+            if isinstance(content, list):
+                content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+            return content or ""
         r = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={"x-api-key": self.cfg.anthropic_api_key, "anthropic-version": "2023-06-01",
+            self._endpoint(),
+            headers={"x-api-key": self.cfg.ai_key(), "anthropic-version": self.cfg.ai_version,
                      "content-type": "application/json"},
-            json={"model": self.cfg.ai_model, "max_tokens": 300, "system": system,
-                  "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=str)}]},
-            timeout=self.cfg.ai_timeout_s)
-        r.raise_for_status()
+            json={"model": self.cfg.ai_model, "max_tokens": self.cfg.ai_max_tokens, "temperature": 0,
+                  "system": system, "messages": [{"role": "user", "content": user}]},
+            timeout=self.cfg.ai_timeout_s,
+        )
+        if r.status_code >= 400:
+            raise RuntimeError(f"HTTP {r.status_code}: {(r.text or '')[:200]}")
         return "".join(b.get("text", "") for b in r.json().get("content", []) if isinstance(b, dict))
 
-    def _ask(self, system, payload, validator):
+    # ------------------------------------------------------------ audit log
+    def _log_call(self, kind, payload, answer, latency_ms, error=None):
+        path = self.cfg.ai_log_path
+        if not path:
+            return
+        try:
+            d = os.path.dirname(path)
+            if d:
+                os.makedirs(d, exist_ok=True)
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "ts": time.time(), "kind": kind, "provider": self.provider, "model": self.cfg.ai_model,
+                    "prompt_sha256": hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()[:16],
+                    "latency_ms": round(latency_ms), "answer_chars": len(answer or ""),
+                    "error": (str(error)[:300] if error else None),
+                }, ensure_ascii=False) + "\n")
+        except OSError:
+            pass
+
+    # ------------------------------------------------------------ core
+    def _ask(self, system, payload, validator, kind="unknown"):
         """None = خطا یا خروجی نامعتبر."""
         if not self.enabled:
             return None
+        key = hashlib.sha256((system + json.dumps(payload, sort_keys=True, default=str)).encode()).hexdigest()
+        now = time.time()
+        hit = self._cache.get(key)
+        if hit and now - hit[0] <= max(0, self.cfg.ai_cache_s):
+            return hit[1]
+        last = None
+        for attempt in range(max(0, self.cfg.ai_retries) + 1):
+            t0 = time.time()
+            try:
+                raw = self._transport(system, payload)
+                out = validator(_json_obj(raw))
+                latency = (time.time() - t0) * 1000
+                self._log_call(kind, payload, raw, latency)
+                self.last_meta = {"provider": self.provider, "model": self.cfg.ai_model,
+                                  "latency_ms": round(latency), "attempt": attempt + 1}
+                if out is None:
+                    self.last_error = "invalid_model_output"
+                    return None
+                if self.cfg.ai_cache_s > 0:
+                    self._cache[key] = (now, out)
+                    if len(self._cache) > 256:
+                        self._cache = dict(list(self._cache.items())[-128:])
+                return out
+            except Exception as e:                       # noqa: BLE001 - هر خطا => fail-closed
+                last = e
+                self._log_call(kind, payload, "", (time.time() - t0) * 1000, error=e)
+                log.warning("AI call failed (%s/%s): %s", self.provider, self.cfg.ai_model, e)
+                time.sleep(min(2.0, 0.5 * (attempt + 1)))
+        self.last_error = f"{type(last).__name__}: {last}"[:300]
+        return None
+
+    def healthcheck(self, timeout_s=20):
+        """بررسی کلید/مدل/شبکه با یک درخواست کوچک. هرگز کلید را برنمی‌گرداند."""
+        if not self.enabled:
+            return {"ok": False, "error": "AI key/model not configured"}
+        t0 = time.time()
         try:
-            return validator(_json_obj(self._transport(system, payload)))
-        except Exception as e:
-            log.warning("AI call failed: %s", e)
-            return None
+            raw = self._transport("Reply with ONLY the JSON {\"ok\": true}.",
+                                  {"task": "healthcheck", "reply": {"ok": True}})
+            ok = _json_obj(raw) is not None
+            return {"ok": ok, "provider": self.provider, "model": self.cfg.ai_model,
+                    "latency_ms": round((time.time() - t0) * 1000), "raw_chars": len(raw or "")}
+        except Exception as e:                           # noqa: BLE001
+            return {"ok": False, "provider": self.provider, "model": self.cfg.ai_model, "error": f"{type(e).__name__}: {e}"[:300]}
 
     def decide(self, sig, ctx):
         payload = {"signal": {"symbol": sig.symbol, "kind": sig.kind, "score": sig.score,
                               "reasons": sig.reasons, "features": sig.features}, **ctx}
-        out = self._ask(SYS_GATE, payload, validate_gate)
+        out = self._ask(SYS_GATE, payload, validate_gate, kind="gate")
         if out is None:
             return None
         out["approve"] = out["approve"] and out["confidence"] >= self.cfg.min_ai_conf
-        out["source"] = "ai"
+        out.update({"source": "ai", **self.last_meta})
         return out
 
     def review(self, ctx):
-        out = self._ask(SYS_REVIEW, ctx, validate_review)
-        return {**out, "source": "ai"} if out else None
+        out = self._ask(SYS_REVIEW, ctx, validate_review, kind="review")
+        return {**out, "source": "ai", **self.last_meta} if out else None
 
     def reflect(self, ctx):
-        out = self._ask(SYS_REFLECT, ctx, validate_reflect)
-        return {**out, "source": "ai"} if out else None
+        out = self._ask(SYS_REFLECT, ctx, validate_reflect, kind="reflect")
+        return {**out, "source": "ai", **self.last_meta} if out else None

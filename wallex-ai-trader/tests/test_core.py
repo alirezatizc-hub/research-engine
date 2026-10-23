@@ -49,7 +49,7 @@ class ShadowE2E(unittest.TestCase):
         cfg = tcfg(mode="shadow")
         bot, ex, clock = make_bot(cfg)
         bot.step(); self.assertIn("BTCTMN", bot.positions)
-        clock.sleep(20); ex.price *= 1.05; bot.step()
+        clock.sleep(20); ex.price *= 1 + cfg.tp_min + 0.01; bot.step()
         self.assertNotIn("BTCTMN", bot.positions); self.assertGreater(bot.broker.cash(), 5_000_000)
         bot.state["last_bucket"] = None; clock.sleep(900); ex.cs = dip_candles(clock); ex.price = ex.cs[-1]["c"]
         bot.cooldown.clear(); bot.step(); self.assertIn("BTCTMN", bot.positions)
