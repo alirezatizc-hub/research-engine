@@ -53,16 +53,20 @@ def fmt_price(mi, price, rounding=ROUND_DOWN):
 
 
 class Wallex:
-    def __init__(self, api_key="", base=BASE, session=None, timeout=12, sleep=time.sleep, now=time.time):
+    def __init__(self, api_key="", base=BASE, session=None, timeout=12, sleep=time.sleep, now=time.time,
+                 api_key_header="X-API-Key", extra_headers=None):
         self.key, self.base, self.timeout, self.sleep, self.now = api_key, base, timeout, sleep, now
+        self.api_key_header = api_key_header or "X-API-Key"
+        # هدرهای اضافه برای حساب‌های فرعی/هکاتون؛ هرگز در لاگ چاپ نمی‌شوند.
+        self.extra_headers = {str(k): str(v) for k, v in (extra_headers or {}).items()}
         self.s = session or requests.Session()
         self._mk, self._mk_ts = None, 0.0
 
     # ---- low level ----
     def _send(self, method, path, params=None, body=None, auth=False):
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", **self.extra_headers}
         if auth:
-            headers["X-API-Key"] = self.key
+            headers[self.api_key_header] = self.key
         r = self.s.request(method, self.base + path, params=params, json=body, headers=headers, timeout=self.timeout)
         try:
             data = r.json()
@@ -106,6 +110,23 @@ class Wallex:
 
     def book(self, symbol):
         return S.parse_book(self._call("GET", "/v1/depth", params={"symbol": symbol}))
+
+    def profile(self):
+        """پروفایل حساب؛ برای پیدا کردن شناسهٔ حساب/زیرحساب (tracking_id / meta) و بررسی کلید."""
+        return S.parse_profile(self._call("GET", "/v1/account/profile", auth=True))
+
+    def account_trades(self, symbol=None, side=None):
+        """آخرین معاملات حساب (منبع مستقل برای راستی‌آزمایی معاملات و کارمزد واقعی)."""
+        params = {}
+        if symbol:
+            params["symbol"] = symbol
+        if side:
+            params["side"] = side
+        r = S.envelope(self._call("GET", "/v1/account/trades", params=params or None, auth=True), "accountTrades")
+        rows = r.get("AccountLatestTrades") if isinstance(r, dict) else None
+        if not isinstance(rows, list):
+            raise S.SchemaError("accountTrades: AccountLatestTrades not a list")
+        return rows
 
     # ---- candles ----
     # رفتار واقعی (گزارش اجرا): resolution=15 کندل‌هایی با فاصله ۶۰ثانیه برمی‌گرداند؛ پس فقط دادهٔ ۱ دقیقه‌ای
@@ -206,9 +227,11 @@ class Wallex:
             status, data = self._send("POST", "/v1/account/orders", body=body, auth=True)
         except requests.RequestException as e:
             raise AmbiguousOrder(f"network: {e}")
-        if status in (400, 401, 402, 403, 404, 405, 422, 429):
+        if status in (400, 401, 402, 403, 404, 405, 422):
             raise HTTPFailure(status, data)             # رد قطعی: سفارش ثبت نشده
-        if status == 409 or status >= 500 or data is None or status >= 400:
+        # 409 (client_id تکراری), 429 (محدودیت نرخ پیش از پردازش یا بعد از آن — نامعلوم), 5xx,
+        # پاسخ غیر-JSON و هر کد نامنتظره: ممکن است سفارش ثبت شده باشد => باید با client_id بررسی شود.
+        if status == 409 or status >= 400 or data is None:
             raise AmbiguousOrder(f"HTTP {status}: {str(data)[:120]}")
         try:
             return S.parse_order_envelope(data)

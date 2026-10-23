@@ -62,7 +62,11 @@ def load_real_dataset(directory, symbols):
     return data, man
 
 
-def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlabeled"):
+def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlabeled",
+                 ai_gate=None, max_ai_calls=80):
+    """ai_gate: تابع (sig, ctx) -> dict|None برای بازتولید دقیق مسیر live (AI در حلقه).
+    None یعنی AI رد/خطا (fail-closed). بدون ai_gate، مسیر rules-only با آستانه سخت‌گیرانه‌تر اجرا می‌شود.
+    """
     first = next(iter(data))
     ts_all = sorted({c["t"] for c in data[first]})
     idx = {s: {c["t"]: i for i, c in enumerate(cs)} for s, cs in data.items()}
@@ -71,6 +75,8 @@ def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlab
     learner = Learner(cfg, {}) if learn else None
     cooldown, events = {}, []
     liquidate, killed_at = False, None
+    ai_stats = {"calls": 0, "approved": 0, "rejected": 0, "errors": 0, "skipped_budget": 0}
+    closes_by_day, trades_by_day = {}, {}
     fn, scores = Counter(), {"dip": [], "breakout": []}     # قیف تشخیصی؛ روی نتایج اثر ندارد
 
     def equity(t):
@@ -91,12 +97,15 @@ def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlab
                        "exit": px, "pnl_tmn": pnl, "pnl_pct": pct, "reason": reason})
         if pnl < 0:
             cooldown[s] = t + cfg.cooldown_min * 60
+        day = int(t // 86400)
+        trades_by_day[day] = trades_by_day.get(day, 0) + 1
         if learner:
             events.extend(learner.record(make_record(p, t, px, pct, reason, int((t - p.entry_ts) / (cfg.resolution * 60)))))
 
     for t in ts_all:
         eff = learner.effective_cfg() if learner else cfg
         risk.cfg = eff
+        closes_by_day.setdefault(int(t // 86400), t)
         # 0) تسویه Kill-Switch (open کندل جاری، مدل محافظه‌کارانه)
         if liquidate:
             for s in list(pos):
@@ -142,7 +151,8 @@ def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlab
         if risk.killed and killed_at is None:
             killed_at, liquidate, pending = t, bool(pos), []
         # 3) سیگنال روی کندل بسته‌شده
-        blocked = risk.entry_block(eq, len(pos))
+        blocked = risk.entry_block(eq, len(pos), trades_by_day.get(int(t // 86400), 0), exposure=(
+            sum(p.qty * (data[s][idx[s][t]]["c"] if t in idx[s] else p.entry) for s, p in pos.items())))
         if blocked:
             fn["bars_entry_blocked:" + blocked.split(":")[0]] += 1
         else:
@@ -183,14 +193,44 @@ def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlab
                 bias = learner.score_bias(sig.kind) if learner else 0.0
                 if learner and not learner.allowed(s, sig.kind, t)[0]:
                     fn["rejected:learner_disabled"] += 1; continue
-                thr = max(eff.rules_min_score, eff.min_score) + bias
+                # مسیر live با AI فقط از min_score عبور می‌کند؛ مسیر rules-only از rules_min_score.
+                thr = (eff.min_score if ai_gate else max(eff.rules_min_score, eff.min_score)) + bias
                 if sig.score >= thr:
                     fn[f"passed_score:{sig.kind}"] += 1
                     sigs.append(sig)
                 else:
                     fn[f"rejected:score<{thr:g} ({sig.kind})"] += 1
-            pending = sorted(sigs, key=lambda x: -x.score)[: cfg.max_positions - len(pos)]
-            fn["pending_entries_queued"] += len(pending)
+            if ai_gate and sigs:
+                kept = []
+                for sig in sorted(sigs, key=lambda x: -x.score)[: cfg.max_positions - len(pos)]:
+                    if ai_stats["calls"] >= max_ai_calls:
+                        ai_stats["skipped_budget"] += 1
+                        continue
+                    ctx = {"recent_closes_pct": [
+                        round(100 * (data[sig.symbol][idx[sig.symbol][t]]["c"] /
+                                     data[sig.symbol][max(0, idx[sig.symbol][t] - 12)]["c"] - 1), 2)],
+                        "book": {"spread_pct": 0.15}, "market_snapshot": {}, "open_positions": list(pos),
+                        "recent_trades": trades[-5:], "lessons": [], "risk_mode": risk.s.get("ai_mode", "normal")}
+                    ai_stats["calls"] += 1
+                    try:
+                        ans = ai_gate(sig, ctx)
+                    except Exception:                       # noqa: BLE001
+                        ans = None
+                    if ans is None:
+                        ai_stats["errors"] += 1
+                        fn["rejected:ai_failed"] += 1
+                        continue
+                    if not ans.get("approve"):
+                        ai_stats["rejected"] += 1
+                        fn["rejected:ai"] += 1
+                        continue
+                    ai_stats["approved"] += 1
+                    kept.append(sig)
+                sigs = kept
+            pending_sorted = sorted(sigs, key=lambda x: -x.score)[: cfg.max_positions - len(pos)]
+            fn["pending_entries_queued"] += len(pending_sorted)
+            sigs = pending_sorted
+            pending = sigs
     last_t = ts_all[-1]
     for s in list(pos):                                    # تسویه نهایی به تومان
         close(s, last_t, data[s][-1]["c"] * (1 - cfg.slippage), "final_liquidation")
@@ -204,13 +244,20 @@ def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlab
             curve.append((last_t, cash))
     rep = summarize(initial, cash, trades, curve)
     rep.update({"data_source": label, "kill_switch_at": killed_at, "learning_events": len(events),
+                "ai_gate": ({**ai_stats, "mode": "ai_in_the_loop"} if ai_gate else
+                            {"mode": "rules_only", "note": "AI شبیه‌سازی نشده؛ آستانه سخت‌گیرانه‌تر است"}),
+                "thresholds": {"signal_min_score": cfg.min_score, "rules_only_threshold": max(cfg.rules_min_score, cfg.min_score),
+                               "used": (cfg.min_score if ai_gate else max(cfg.rules_min_score, cfg.min_score)),
+                               "ai_gate": bool(ai_gate)},
                 "final_overrides": learner.s["overrides"] if learner else {}, "learn": learn,
                 "funnel": dict(sorted(fn.items())),
                 "score_stats": {k: ({"n": len(v), "min": round(min(v), 1), "max": round(max(v), 1),
                                      "mean": round(sum(v) / len(v), 1)} if v else {"n": 0}) for k, v in scores.items()},
                 "settings": {"max_drawdown": cfg.max_drawdown, "daily_loss_limit": cfg.daily_loss_limit,
                              "rules_min_score": cfg.rules_min_score, "min_score": cfg.min_score,
-                             "max_drawdown_status": "تعیین‌نشده توسط کاربر (پیش‌فرض پروژه) — مقدار ۳٪ ذکرشده فقط ثبت شده و اعمال نشده؛ docs/DECISIONS.md"},
+                             "min_atr_pct": cfg.min_atr_pct, "rsi_buy": cfg.rsi_buy, "bb_max_pos": cfg.bb_max_pos,
+                             "max_trend_dev": cfg.max_trend_dev, "max_trades_per_day": cfg.max_trades_per_day,
+                             "max_drawdown_status": "برای live باید صریحاً با WTB_MAX_DRAWDOWN تعیین و ACK شود؛ مقدار پیش‌فرض پروژه فقط برای بک‌تست/دمو است"},
                 "assumptions": {"ai": "not simulated (rules-only, stricter than live)", "fee_rate": cfg.fee_rate,
                                 "slippage": cfg.slippage, "bt_size_mult": cfg.bt_size_mult,
                                 "kill_liquidation": f"min(open, prev_close)*(1-{cfg.slippage}*{cfg.kill_slip_mult})"}})

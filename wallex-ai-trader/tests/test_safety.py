@@ -336,10 +336,11 @@ class Learning(unittest.TestCase):
         for n in range(1, 301):
             L2.record(self.rec(n))
             e = L2.effective_cfg()
-            self.assertGreaterEqual(e.tp_atr, 1.8 - 1e-9); self.assertLessEqual(e.sl_atr, 2.4 + 1e-9)
-            self.assertGreaterEqual(e.rsi_buy, 25.0); self.assertLessEqual(e.max_trend_dev, 0.06 + 1e-9)
+            b = L2.bounds
+            self.assertGreaterEqual(e.tp_atr, b["tp_atr"][0] - 1e-9); self.assertLessEqual(e.sl_atr, b["sl_atr"][1] + 1e-9)
+            self.assertGreaterEqual(e.rsi_buy, b["rsi_buy"][0]); self.assertLessEqual(e.max_trend_dev, b["max_trend_dev"][1] + 1e-9)
         L3 = Learner(cfg, {"overrides": {"tp_atr": 99.0, "evil": 1}})     # state دست‌کاری‌شده
-        self.assertEqual(L3.effective_cfg().tp_atr, 3.6)
+        self.assertEqual(L3.effective_cfg().tp_atr, L3.bounds["tp_atr"][1])
         self.assertNotIn("evil", L3.s["overrides"])
 
     def test_learner_disables_losing_symbol(self):
@@ -358,3 +359,13 @@ class Learning(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RiskSizingFeeAware(unittest.TestCase):
+    def test_fee_is_reserved_before_sizing(self):
+        from wallexbot.risk import RiskManager
+        cfg = Config(fee_rate=0.10, reserve_frac=0.0, max_pos_frac=1.0, risk_per_trade=1.0,
+                     max_positions=3, max_exposure_frac=0.9)
+        r = RiskManager(cfg, {})
+        # by_risk = 1000×1.0/0.5 = 2000، cap = 1000، avail = (1000-0)/(1+0.1) = 909
+        self.assertAlmostEqual(r.size(1000, 1000, 0.5), 1000 / 1.1, places=6)

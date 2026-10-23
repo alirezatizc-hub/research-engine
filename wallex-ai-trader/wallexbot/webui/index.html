@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>والکس‌بات — پنل کنترل</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="bg-glow"></div>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">W</div>
+    <div>
+      <div class="brand-title">والکس‌بات <span class="chip">هکاتون استارکوچ</span></div>
+      <div class="brand-sub">موتور معاملاتی الگوریتمی + عامل هوش مصنوعی</div>
+    </div>
+  </div>
+  <div class="top-status">
+    <span id="connPill" class="pill pill-muted">در حال اتصال…</span>
+    <span id="modePill" class="pill pill-muted">—</span>
+    <span id="clockPill" class="pill pill-muted">—</span>
+  </div>
+  <div class="top-actions">
+    <select id="modeSelect" title="حالت اجرا">
+      <option value="shadow">Shadow (بدون سفارش واقعی)</option>
+      <option value="live">Live (سفارش واقعی)</option>
+      <option value="replay">Replay (دادهٔ ضبط‌شده)</option>
+    </select>
+    <input id="replaySpeed" type="number" min="10" step="10" value="600" title="سرعت Replay (ثانیهٔ مجازی در هر ثانیهٔ واقعی)" style="width:92px">
+    <button id="startBtn" class="btn btn-primary">شروع</button>
+    <button id="stopBtn" class="btn btn-ghost">توقف</button>
+    <button id="flattenBtn" class="btn btn-warn">تسویه به تومان</button>
+  </div>
+</header>
+
+<div id="banner" class="banner hidden"></div>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-tab="dashboard">داشبورد</button>
+  <button class="tab" data-tab="trades">معاملات و لاگ تصمیم</button>
+  <button class="tab" data-tab="backtest">بک‌تست و شبیه‌سازی</button>
+  <button class="tab" data-tab="settings">تنظیمات و اتصال</button>
+  <button class="tab" data-tab="tools">ابزارها و MCP</button>
+  <button class="tab" data-tab="help">راهنما</button>
+</nav>
+
+<main>
+  <!-- ================= DASHBOARD ================= -->
+  <section class="panel active" id="tab-dashboard">
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">ارزش حساب</div><div class="kpi-value" id="kpiEquity">—</div><div class="kpi-foot" id="kpiEquityFoot">تومان</div></div>
+      <div class="kpi"><div class="kpi-label">بازدهی خالص</div><div class="kpi-value" id="kpiReturn">—</div><div class="kpi-foot" id="kpiReturnFoot">نسبت به ۵ میلیون تومان</div></div>
+      <div class="kpi"><div class="kpi-label">سود/زیان محقق‌شده</div><div class="kpi-value" id="kpiRealized">—</div><div class="kpi-foot" id="kpiFees">کارمزد: —</div></div>
+      <div class="kpi"><div class="kpi-label">افت از اوج</div><div class="kpi-value" id="kpiDrawdown">—</div><div class="kpi-foot" id="kpiPeak">اوج: —</div></div>
+      <div class="kpi"><div class="kpi-label">پوزیشن‌های باز</div><div class="kpi-value" id="kpiPositions">—</div><div class="kpi-foot" id="kpiCash">نقد: —</div></div>
+      <div class="kpi"><div class="kpi-label">معاملات بسته‌شده</div><div class="kpi-value" id="kpiTrades">—</div><div class="kpi-foot" id="kpiWinRate">—</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>منحنی ارزش حساب</h2><span class="muted" id="curveNote">—</span></div>
+        <canvas id="equityChart" height="260"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>وضعیت موتور</h2><span id="engineBadge" class="pill pill-muted">—</span></div>
+        <div class="status-list" id="engineList"></div>
+        <div class="gate-box" id="gateBox"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>پوزیشن‌های باز</h2><span class="muted">قیمت‌ها از دفتر سفارش/دادهٔ replay</span></div>
+      <div class="table-wrap"><table id="positionsTable"><thead><tr>
+        <th>نماد</th><th>نوع</th><th>حجم</th><th>ورود</th><th>آخرین</th><th>سود/زیان</th><th>استاپ</th><th>تارگت</th><th>ارزش</th><th>سن</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="positionsEmpty" class="empty">هیچ پوزیشن بازی وجود ندارد.</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>آخرین تصمیم‌ها</h2><span class="muted">لاگ تصمیم‌گیری</span></div>
+        <div id="decisionFeed" class="feed"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>یادگیری و رژیم ریسک</h2></div>
+        <div class="status-list" id="riskList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TRADES ================= -->
+  <section class="panel" id="tab-trades">
+    <div class="card">
+      <div class="card-head"><h2>معاملات بسته‌شده</h2>
+        <div class="row"><button class="btn btn-ghost btn-sm" id="reloadTrades">به‌روزرسانی</button></div>
+      </div>
+      <div class="table-wrap"><table id="tradesTable"><thead><tr>
+        <th>#</th><th>نماد</th><th>نوع</th><th>ورود</th><th>خروج</th><th>قیمت ورود</th><th>قیمت خروج</th><th>سود (تومان)</th><th>درصد</th><th>دلیل خروج</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="tradesEmpty" class="empty hidden">هنوز معامله‌ای ثبت نشده است.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>لاگ تصمیم (دلیل هر خرید/فروش)</h2>
+        <div class="row">
+          <select id="actionFilter">
+            <option value="">همه</option>
+            <option value="BUY">خرید</option>
+            <option value="SELL">فروش</option>
+            <option value="DECISION">تصمیم AI</option>
+            <option value="SKIP">رد سیگنال</option>
+            <option value="LEARN">یادگیری</option>
+            <option value="FLATTEN">تسویه</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="reloadDecisions">به‌روزرسانی</button>
+        </div>
+      </div>
+      <div id="decisionTable" class="feed tall"></div>
+    </div>
+  </section>
+
+  <!-- ================= BACKTEST ================= -->
+  <section class="panel" id="tab-backtest">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>اجرای بک‌تست</h2><span class="muted">همان استراتژی/ریسک/یادگیری کد زنده</span></div>
+        <div class="form-grid">
+          <label>دادهٔ واقعی (data/) <input type="radio" name="btData" value="real" checked></label>
+          <label>دادهٔ مصنوعی (فقط تست دود) <input type="radio" name="btData" value="synthetic"></label>
+          <label class="check"><input type="checkbox" id="btLearn"> یادگیری فعال</label>
+          <label class="check"><input type="checkbox" id="btAI"> AI در حلقه (هزینهٔ API)</label>
+        </div>
+        <button class="btn btn-primary" id="runBacktest">اجرای بک‌تست</button>
+        <div id="btJob" class="muted small"></div>
+        <div class="info-box">
+          مسیر rules-only آستانهٔ سخت‌گیرانه‌تر (۷۰) را دارد؛ با AI در حلقه، آستانهٔ سیگنال ۵۵ است و AI می‌تواند رد کند.
+          این دقیقاً همان مسیر live است.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>نتیجه</h2><select id="btPick">
+          <option value="real">آخرین بک‌تست واقعی</option>
+          <option value="web">آخرین اجرای پنل</option>
+          <option value="learn">بک‌تست + یادگیری</option>
+          <option value="synthetic">مصنوعی</option>
+        </select></div>
+        <div class="kpi-grid mini" id="btKpis"></div>
+        <canvas id="btChart" height="200"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>قیف سیگنال</h2><span class="muted">چرا معامله شد یا نشد</span></div>
+      <pre id="btFunnel" class="funnel">—</pre>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>معاملات بک‌تست</h2></div>
+      <div class="table-wrap"><table id="btTrades"><thead><tr>
+        <th>نماد</th><th>نوع</th><th>ورود</th><th>خروج</th><th>قیمت ورود</th><th>قیمت خروج</th><th>سود (تومان)</th><th>درصد</th><th>دلیل</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section class="panel" id="tab-settings">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>اتصال والکس</h2><span class="pill pill-muted">X-API-Key</span></div>
+        <div class="form-grid">
+          <label>کلید API والکس <input id="wallexKey" type="password" autocomplete="off" placeholder="خالی = بدون تغییر"></label>
+          <label>هدر کلید <input id="apiKeyHeader" placeholder="X-API-Key"></label>
+          <label>هدرهای اضافه (JSON) <input id="extraHeaders" placeholder='{"X-Sub-Account":"..."}'></label>
+          <div class="row">
+            <button class="btn btn-ghost" id="testConn">تست اتصال و پروفایل</button>
+            <span class="muted small">کلید فقط در .env همین دستگاه ذخیره می‌شود.</span>
+          </div>
+        </div>
+        <div id="connResult" class="result-box hidden"></div>
+        <div class="info-box">
+          شناسهٔ حساب/زیرحساب از پاسخ <code>/v1/account/profile</code> خوانده و در «ابزارها» نمایش داده می‌شود.
+          اگر والکس برای حساب هکاتون هدر جداگانه‌ای لازم دارد، در «هدرهای اضافه» بگذارید.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>هوش مصنوعی</h2><span class="pill pill-muted" id="aiStatus">—</span></div>
+        <div class="form-grid">
+          <label>Provider
+            <select id="aiProvider">
+              <option value="anthropic">Anthropic</option>
+              <option value="openai">OpenAI-compatible</option>
+            </select>
+          </label>
+          <label>مدل <input id="aiModel" placeholder="claude-sonnet-5-5"></label>
+          <label>Base URL (اختیاری) <input id="aiBaseUrl" placeholder="https://api.openai.com/v1"></label>
+          <label>کلید AI <input id="aiKey" type="password" autocomplete="off" placeholder="خالی = بدون تغییر"></label>
+          <div class="row">
+            <button class="btn btn-ghost" id="testAI">تست AI</button>
+            <span class="muted small">AI فقط می‌تواند سخت‌گیرتر کند؛ خطا = ورود ممنوع.</span>
+          </div>
+        </div>
+        <div id="aiResult" class="result-box hidden"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>تنظیمات استراتژی و ریسک</h2><span class="muted">پس از ذخیره، ربات را دوباره شروع کنید</span></div>
+      <div class="row" style="margin-bottom:12px">
+        <label style="flex-direction:row;align-items:center;gap:8px">پروفایل آماده:
+          <select id="profilePreset"><option value="">— انتخاب —</option></select>
+        </label>
+        <button class="btn btn-ghost btn-sm" id="applyProfile">اعمال در فرم (بدون ذخیره)</button>
+        <span class="muted small" id="profileNote"></span>
+      </div>
+      <div class="form-grid three">
+        <label>نمادها (با کاما) <input id="symbols"></label>
+        <label>پایان چالش (ISO) <input id="challengeEnd" placeholder="2026-10-30T23:50:00+03:30"></label>
+        <label>سرمایهٔ اولیه <input id="initialCapital" type="number"></label>
+        <label>حداکثر پوزیشن <input id="maxPositions" type="number"></label>
+        <label>سهم هر پوزیشن <input id="maxPosFrac" type="number" step="0.01"></label>
+        <label>ذخیرهٔ نقد <input id="reserveFrac" type="number" step="0.01"></label>
+        <label>ریسک هر معامله <input id="riskPerTrade" type="number" step="0.001"></label>
+        <label>حداکثر معامله در روز <input id="maxTradesPerDay" type="number"></label>
+        <label>حد ضرر کل حساب <input id="maxDrawdown" type="number" step="0.01"></label>
+        <label>حد ضرر روزانه <input id="dailyLossLimit" type="number" step="0.01"></label>
+        <label>آستانهٔ سیگنال <input id="minScore" type="number"></label>
+        <label>آستانهٔ بدون AI <input id="rulesMinScore" type="number"></label>
+        <label>حداقل نوسان ATR <input id="minAtrPct" type="number" step="0.0005"></label>
+        <label>آستانه RSI خرید <input id="rsiBuy" type="number"></label>
+        <label>موقعیت باند (bb_max_pos) <input id="bbMaxPos" type="number" step="0.01"></label>
+        <label>کارمزد فرضی <input id="feeRate" type="number" step="0.0001"></label>
+        <label>MCP URL <input id="mcpUrl"></label>
+        <label class="check"><input type="checkbox" id="mcpEnabled"> استفاده از MCP در پرامپت</label>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary" id="saveSettings">ذخیره در .env</button>
+        <button class="btn btn-ghost" id="reloadSettings">بازخوانی</button>
+        <span id="saveResult" class="muted small"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>دروازهٔ Live</h2><span class="muted">همهٔ این‌ها باید سبز شوند</span></div>
+      <div id="gateList" class="gate-list">—</div>
+      <div class="row">
+        <button class="btn btn-ghost" id="reloadGate">بررسی دوباره</button>
+        <button class="btn btn-ghost" id="resetKill">ریست Kill-Switch</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TOOLS ================= -->
+  <section class="panel" id="tab-tools">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>MCP والکس</h2><button class="btn btn-ghost btn-sm" id="loadMcp">فهرست ابزارها</button></div>
+        <div class="muted small">POST JSON-RPC به <span id="mcpUrlLabel">—</span> — initialize → tools/list → tools/call</div>
+        <div id="mcpTools" class="result-box tall hidden"></div>
+        <div class="form-grid">
+          <label>نام ابزار <input id="mcpToolName" placeholder="market_snapshot"></label>
+          <label>آرگومان‌ها (JSON) <input id="mcpArgs" placeholder='{"symbol":"BTCTMN"}'></label>
+        </div>
+        <button class="btn btn-ghost" id="mcpCall">فراخوانی ابزار</button>
+        <div id="mcpResult" class="result-box hidden"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>حساب و شناسه‌ها</h2></div>
+        <div id="accountInfo" class="result-box">برای دریافت، «تست اتصال» را در تب تنظیمات بزنید.</div>
+        <div class="info-box">
+          زیرحساب/Client ID در پاسخ پروفایل (meta) یا از سمت برگزارکننده می‌آید. این پنل آن را حدس نمی‌زند؛
+          کلیدهای شناسایی‌شده را نشان می‌دهد تا در هدرهای اضافه استفاده کنید.
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>تست‌های ایمنی</h2><button class="btn btn-ghost btn-sm" id="runTests">اجرای تست‌ها</button></div>
+        <div class="muted small">code_hash برای باز شدن دروازهٔ live باید با آخرین کد یکی باشد.</div>
+        <pre id="testsResult" class="funnel tall">—</pre>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" id="runSafety">اجرای safetytests (ثبت هش)</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>دستورهای خط فرمان</h2></div>
+        <pre id="commands" class="funnel">—</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HELP ================= -->
+  <section class="panel" id="tab-help">
+    <div class="card">
+      <div class="card-head"><h2>راه‌اندازی سریع</h2></div>
+      <ol class="help-list">
+        <li>در تب «تنظیمات» کلید API والکس (و در صورت استفاده، کلید AI) را وارد و ذخیره کنید.</li>
+        <li>«تست اتصال» را بزنید تا نمادها، موجودی و کارمزد واقعی تأیید شوند.</li>
+        <li>ابتدا با حالت <b>Shadow</b> یا <b>Replay</b> اجرا کنید؛ لاگ تصمیم و معاملات را ببینید.</li>
+        <li>برای live، ابتدا دروازهٔ Live را کامل کنید: پایان چالش، حد ضرر صریح، selfcheck، safetytests و ACK.</li>
+        <li>۴۵ دقیقه قبل از پایان چالش، ربات خودش همهٔ پوزیشن‌ها را به تومان تسویه می‌کند و موجودی را بررسی می‌کند.</li>
+      </ol>
+      <div class="links">
+        <a href="https://github.com/alirezatizc-hub/research-engine" target="_blank" rel="noreferrer">مخزن گیت‌هاب</a>
+        <a href="https://api-docs.wallex.ir/" target="_blank" rel="noreferrer">مستندات API والکس</a>
+        <a href="https://wallex.ir/app/my-account/api-management" target="_blank" rel="noreferrer">مدیریت کلید API</a>
+      </div>
+      <div class="info-box">
+        این پنل فقط ابزار کنترل است؛ داوری روی موتور معاملاتی، لاگ تصمیم و نتایج بک‌تست/Shadow انجام می‌شود.
+        همهٔ تصمیم‌ها در <code>logs/decisions.jsonl</code> و معاملات در <code>logs/trades.csv</code> ثبت می‌شوند.
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>والکس‌بات ۱.۱ — Spot only · TMN pairs</span>
+  <span id="footerHint">هیچ سفارشی بدون عبور از دروازهٔ Live ارسال نمی‌شود.</span>
+</footer>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/app.js"></script>
+</body>
+</html>

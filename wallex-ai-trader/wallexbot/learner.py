@@ -12,9 +12,22 @@ from __future__ import annotations
 import dataclasses
 from collections import Counter
 
-BOUNDS = {"sl_atr": (1.2, 2.4), "tp_atr": (1.8, 3.6), "rsi_buy": (25.0, 40.0),
-          "max_trend_dev": (0.02, 0.06), "min_atr_pct": (0.005, 0.012)}
 STEP = {"sl_atr": 0.1, "tp_atr": 0.1, "rsi_buy": 1.0, "max_trend_dev": 0.005, "min_atr_pct": 0.0005}
+
+
+def bounds_for(cfg):
+    """کران‌های یادگیری نسبت به تنظیمات پایه‌اند، نه اعداد ثابت قدیمی.
+
+    اگر پارامتر پیش‌فرض تغییر کند، دامنهٔ یادگیری هم جابه‌جا می‌شود؛ در غیر این صورت learner
+    می‌توانست پارامتری را به مقداری خارج از منطق فعلی بکشاند (مثلاً tp_atr=3.6 وقتی پایه ۵ است).
+    """
+    return {
+        "sl_atr": (round(max(0.6, cfg.sl_atr * 0.6), 4), round(cfg.sl_atr * 1.2, 4)),
+        "tp_atr": (round(max(1.2, cfg.tp_atr * 0.6), 4), round(cfg.tp_atr * 1.2, 4)),
+        "rsi_buy": (round(max(15.0, cfg.rsi_buy - 15), 2), round(min(60.0, cfg.rsi_buy + 15), 2)),
+        "max_trend_dev": (round(max(0.01, cfg.max_trend_dev * 0.5), 4), round(cfg.max_trend_dev * 1.5, 4)),
+        "min_atr_pct": (round(max(0.0005, cfg.min_atr_pct * 0.5), 5), round(cfg.min_atr_pct * 2.0, 5)),
+    }
 
 
 def make_record(pos, exit_ts, exit_price, net_pnl_pct, reason, bars):
@@ -49,11 +62,12 @@ class Learner:
         for k, v in (("trades", []), ("overrides", {}), ("frozen", {}), ("disabled", {}), ("bias", {}),
                      ("last_change", None), ("lessons", []), ("n_total", 0)):
             self.s.setdefault(k, v)
+        self.bounds = bounds_for(cfg)
         for k in list(self.s["overrides"]):                      # کران‌ها را هنگام بارگذاری هم اعمال کن
-            if k not in BOUNDS:
+            if k not in self.bounds:
                 del self.s["overrides"][k]
             else:
-                lo, hi = BOUNDS[k]
+                lo, hi = self.bounds[k]
                 self.s["overrides"][k] = min(hi, max(lo, self.s["overrides"][k]))
 
     # ---- خروجی‌ها ----
@@ -151,7 +165,7 @@ class Learner:
             if s["frozen"].get(param, 0) > s["n_total"]:
                 continue
             old = getattr(eff, param)
-            lo, hi = BOUNDS[param]
+            lo, hi = self.bounds[param]
             new = round(min(hi, max(lo, old + direction * STEP[param])), 6)
             if new == old:
                 continue

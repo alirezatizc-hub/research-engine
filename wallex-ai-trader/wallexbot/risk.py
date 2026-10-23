@@ -21,10 +21,17 @@ class Position:
     feat: dict | None = None
     proceeds_acc: float = 0.0  # فروش‌های جزئی
     cost_sold: float = 0.0
+    qty_closed: float = 0.0    # مجموع حجم فروخته‌شده (برای گزارش درست در trades.csv)
     last_px: float = 0.0
 
     def to_dict(self):
         return asdict(self)
+
+    def unrealized_pct(self, price):
+        return 100.0 * (price / self.entry - 1.0) if self.entry else 0.0
+
+    def market_value(self, price):
+        return self.qty * price
 
 
 class RiskManager:
@@ -49,8 +56,11 @@ class RiskManager:
         if self.s["peak"] and equity < self.s["peak"] * (1 - self.cfg.max_drawdown):
             self.s["killed"] = True
 
-    def entry_block(self, equity, n_positions):
-        """دلیل مسدود بودن ورود، یا None."""
+    def entry_block(self, equity, n_positions, trades_today=None, exposure=None):
+        """دلیل مسدود بودن ورود، یا None.
+
+        trades_today / exposure اختیاری‌اند تا فراخوانی‌های قدیمی (و تست‌ها) بدون تغییر کار کنند.
+        """
         c = self.cfg
         if self.s["killed"]:
             return "kill_switch: max drawdown hit"
@@ -58,6 +68,10 @@ class RiskManager:
             return "ai_risk_mode=pause"
         if n_positions >= c.max_positions:
             return "max_positions"
+        if trades_today is not None and trades_today >= c.max_trades_per_day:
+            return "max_trades_per_day"
+        if exposure is not None and equity > 0 and exposure > c.max_exposure_frac * equity:
+            return "max_exposure"
         if self.s["day_start"] and equity < self.s["day_start"] * (1 - c.daily_loss_limit):
             return "daily_loss_limit"
         return None
@@ -73,6 +87,7 @@ class RiskManager:
         by_risk = equity * c.risk_per_trade / stop_pct       # ضرر در حد استاپ = ۰٫۶٪ کل سرمایه
         cap = equity * c.max_pos_frac
         avail = max(0.0, cash - equity * c.reserve_frac)     # همیشه بخشی نقد می‌ماند
+        avail = avail / (1.0 + c.fee_rate)                   # کارمزد هم باید از همین نقد پرداخت شود
         n = min(by_risk, cap, avail)
         if self.s["ai_mode"] == "defensive":
             n *= 0.5

@@ -164,11 +164,33 @@ def parse_balances(d):
 
 
 def parse_fee(d):
+    """مستندات نمونه را به‌صورت map نشان می‌دهد؛ برای سازگاری، list از آبجکت‌ها هم پذیرفته می‌شود."""
     r = envelope(d, "fee")
+    if isinstance(r, list):
+        rows = {}
+        for i, v in enumerate(r):
+            if not isinstance(v, dict):
+                raise SchemaError(f"fee[{i}]: not an object")
+            k = text(req(v, "symbol", f"fee[{i}]"), "fee.symbol")
+            rows[k] = v
+        r = rows
     if not isinstance(r, dict) or not r:
         raise SchemaError("fee: expected non-empty mapping")
-    return {k: {"maker": num(req(v, "makerFeeRate", k), "maker", 0.0), "taker": num(req(v, "takerFeeRate", k), "taker", 0.0)}
-            for k, v in r.items()}
+    out = {}
+    for k, v in r.items():
+        if not isinstance(v, dict):
+            raise SchemaError(f"fee.{k}: not an object")
+        out[k] = {"maker": num(req(v, "makerFeeRate", k), "maker", 0.0),
+                  "taker": num(req(v, "takerFeeRate", k), "taker", 0.0)}
+    return out
+
+
+def parse_profile(d):
+    """پروفایل فقط خوانده می‌شود؛ برای شناسایی حساب (tracking_id / meta) بدون فرض ساختار سخت."""
+    r = envelope(d, "profile")
+    if not isinstance(r, dict):
+        raise SchemaError("profile: not an object")
+    return r
 
 
 # ---------------- orders ----------------
