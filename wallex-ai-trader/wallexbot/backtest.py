@@ -49,6 +49,8 @@ def load_real_dataset(directory, symbols):
         raise SystemExit("manifest منبع واقعی والکس را تأیید نمی‌کند؛ داده به‌عنوان واقعی پذیرفته نمی‌شود")
     if man.get("source_resolution_min") != 1 or not man.get("aggregated_client_side"):
         raise SystemExit("manifest نشان نمی‌دهد داده از ۱ دقیقه‌ای تجمیع شده؛ با `fetch` دوباره بسازید")
+    if not symbols:                                   # None/خالی = همهٔ CSVهای موجود در پوشه
+        symbols = sorted(f[:-4] for f in os.listdir(directory) if f.endswith(".csv"))
     data = {s: load_csv(os.path.join(directory, f"{s}.csv")) for s in symbols
             if os.path.exists(os.path.join(directory, f"{s}.csv"))}
     from .aggregate import validate_series, DataIntegrityError
@@ -63,9 +65,12 @@ def load_real_dataset(directory, symbols):
 
 
 def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlabeled",
-                 ai_gate=None, max_ai_calls=80):
+                 ai_gate=None, max_ai_calls=80, trade_from=None):
     """ai_gate: تابع (sig, ctx) -> dict|None برای بازتولید دقیق مسیر live (AI در حلقه).
     None یعنی AI رد/خطا (fail-closed). بدون ai_gate، مسیر rules-only با آستانه سخت‌گیرانه‌تر اجرا می‌شود.
+
+    trade_from: اگر داده شود، کندل‌های قبل از آن فقط «زمینهٔ» اندیکاتور هستند و هیچ معامله/سیگنالی
+    روی آن‌ها انجام نمی‌شود (برای walk-forward با پنجره‌های پیوسته؛ منحنی سرمایه هم از همین نقطه شروع می‌شود).
     """
     first = next(iter(data))
     ts_all = sorted({c["t"] for c in data[first]})
@@ -147,7 +152,8 @@ def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlab
                 close(s, t, px, reason)
         eq = equity(t)
         risk.update(eq, t)
-        curve.append((t, eq))
+        if trade_from is None or t >= trade_from:
+            curve.append((t, eq))
         if risk.killed and killed_at is None:
             killed_at, liquidate, pending = t, bool(pos), []
         # 3) سیگنال روی کندل بسته‌شده
@@ -163,6 +169,8 @@ def run_backtest(data: dict, cfg, initial=5_000_000.0, learn=False, label="unlab
                     continue
                 if i < 120:
                     fn["skip:warmup(<120 bars)"] += 1; continue
+                if trade_from is not None and t < trade_from:   # فقط زمینهٔ اندیکاتور، بدون معامله
+                    fn["skip:before_window"] += 1; continue
                 if s in pos:
                     fn["skip:already_in_position"] += 1; continue
                 if cooldown.get(s, 0) > t:

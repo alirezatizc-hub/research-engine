@@ -30,6 +30,15 @@ choose a risk mode: "normal", "defensive" (halve position sizes; choppy/falling 
 or "pause" (no new entries; sharp market-wide selloff or repeated stop-outs).
 Reply with ONLY JSON: {"risk_mode": "normal|defensive|pause", "note": "<=40 words"}"""
 
+SYS_OPTIMIZE = """You are the research director of a spot-only crypto trading bot on the Iranian exchange Wallex (TMN pairs).
+You get: (a) results of several parameter scenarios backtested on a TRAIN window and ranked on a VALIDATION window,
+(b) the hard parameter bounds in "allowed_parameters", (c) the most frequent rejection reasons.
+Diagnose why the scenarios lose money after fees (bad entries, stop-outs, too few trades, drawdown, overfitting),
+then propose at most 4 NEW parameter sets that are inside the bounds and likely to survive validation.
+Never propose a parameter outside allowed_parameters. Prefer robustness over the best train number.
+Do not assume any knowledge of a hidden test window. Reply with ONLY compact JSON:
+{"diagnosis": "<=60 words", "failure_modes": ["<=8 words"], "proposals": [{"name": "short", "params": {"param": value}, "rationale": "<=30 words"}], "recommend": "scenario name", "confidence": 0..1}"""
+
 SYS_REFLECT = """You are the post-trade analyst of a trading bot. You receive its recent closed trades with entry features,
 mistake tags computed by the bot, per-kind statistics and parameter changes already made. Identify concrete, evidence-based
 patterns (not noise: with few trades say so). Reply with ONLY JSON:
@@ -69,6 +78,32 @@ def validate_review(o):
     if not isinstance(note, str):
         return None
     return {"risk_mode": o["risk_mode"], "note": note[:300]}
+
+
+def validate_optimize(o):
+    """اسکلت پاسخ تحلیل بهینه‌سازی؛ اعتبار عددی پارامترها در optimizer.sanitize_params انجام می‌شود."""
+    if not isinstance(o, dict):
+        return None
+    diag = o.get("diagnosis")
+    if not isinstance(diag, str) or not diag.strip():
+        return None
+    fms = o.get("failure_modes") or []
+    if not isinstance(fms, list):
+        fms = []
+    props = o.get("proposals") or []
+    if not isinstance(props, list):
+        props = []
+    clean = []
+    for p in props[:4]:
+        if not isinstance(p, dict) or not isinstance(p.get("params"), dict) or not p["params"]:
+            continue
+        clean.append({"name": str(p.get("name") or "ai-proposal")[:40],
+                      "params": p["params"],
+                      "rationale": str(p.get("rationale") or p.get("note") or "")[:240]})
+    conf = o.get("confidence")
+    return {"diagnosis": diag[:400], "failure_modes": [str(x)[:120] for x in fms[:6]],
+            "proposals": clean, "recommend": str(o.get("recommend") or "")[:60] or None,
+            "confidence": float(conf) if _is_num(conf, 0, 1) else 0.5}
 
 
 def validate_reflect(o):
@@ -225,6 +260,13 @@ class AIAgent:
     def review(self, ctx):
         out = self._ask(SYS_REVIEW, ctx, validate_review, kind="review")
         return {**out, "source": "ai", **self.last_meta} if out else None
+
+    def optimize(self, ctx):
+        """تحلیل نتایج بک‌تست و پیشنهاد سناریوهای جدید. خروجی None = خطا/خروجی نامعتبر."""
+        out = self._ask(SYS_OPTIMIZE, ctx, validate_optimize, kind="optimize")
+        if out is None:
+            return None
+        return {**out, "source": "ai", **self.last_meta}
 
     def reflect(self, ctx):
         out = self._ask(SYS_REFLECT, ctx, validate_reflect, kind="reflect")

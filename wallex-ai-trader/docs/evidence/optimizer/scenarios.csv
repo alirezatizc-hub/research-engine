@@ -1,0 +1,15 @@
+round,name,source,status,score,train_return_pct,train_dd_pct,train_trades,val_return_pct,val_dd_pct,val_trades,val_pf,reject,params
+1,baseline,seed,ok,-7.43,-1.44,3.46,17,-2.04,3.2,11,0.43,,{}
+1,conservative,seed,ok,-4.825,-0.85,3.34,10,-0.51,1.77,3,0.68,,"{""min_atr_pct"": 0.004, ""rsi_buy"": 40.0, ""bb_max_pos"": 0.21, ""min_score"": 63.0, ""rules_min_score"": 63.0, ""max_trades_per_day"": 12}"
+1,active,seed,ok,-7.139,-1.38,3.47,17,-2.31,2.74,10,0.28,,"{""min_atr_pct"": 0.0015, ""rsi_buy"": 50.0, ""bb_max_pos"": 0.39, ""min_score"": 50.0, ""rules_min_score"": 50.0, ""max_trades_per_day"": 30}"
+1,dip_only,seed,ok,-6.569,-0.46,2.8,16,-2.04,3.2,11,0.43,,"{""kinds"": [""dip""]}"
+1,breakout_only,seed,ok,-8.337,-3.18,3.34,4,-1.61,2.08,2,0.0,,"{""kinds"": [""breakout""]}"
+1,tight_stops,seed,ok,-4.936,0.14,2.32,25,-2.02,2.48,12,0.39,,"{""sl_atr"": 1.75, ""tp_atr"": 4.0, ""trail_activate"": 0.03, ""max_hold_h"": 24.0}"
+1,wide_swing,seed,ok,-2.369,0.86,2.44,14,-0.29,1.9,9,0.91,,"{""sl_atr"": 3.0, ""tp_atr"": 5.75, ""trail_activate"": 0.05, ""max_hold_h"": 57.6}"
+1,fewer_bigger,seed,ok,-3.59,0.1,2.01,11,-0.99,1.97,8,0.49,,"{""max_positions"": 2, ""max_pos_frac"": 0.325, ""risk_per_trade"": 0.006, ""max_trades_per_day"": 8}"
+2,min_atr_pct×0.8,local_search,ok,-2.369,0.86,2.44,14,-0.29,1.9,9,0.91,,"{""sl_atr"": 3.0, ""tp_atr"": 5.75, ""trail_activate"": 0.05, ""max_hold_h"": 57.6, ""min_atr_pct"": 0.002, ""rules_min_score"": 55.0, ""min_score"": 55.0}"
+2,min_atr_pct×1.25,local_search,ok,-2.369,0.86,2.44,14,-0.29,1.9,9,0.91,,"{""sl_atr"": 3.0, ""tp_atr"": 5.75, ""trail_activate"": 0.05, ""max_hold_h"": 57.6, ""min_atr_pct"": 0.003125, ""rules_min_score"": 55.0, ""min_score"": 55.0}"
+2,rsi_buy-3,local_search,ok,-3.6,0.62,2.42,12,-0.89,2.23,8,0.68,,"{""sl_atr"": 3.0, ""tp_atr"": 5.75, ""trail_activate"": 0.05, ""max_hold_h"": 57.6, ""rsi_buy"": 42.0, ""rules_min_score"": 55.0, ""min_score"": 55.0}"
+2,rsi_buy+3,local_search,ok,-2.576,1.96,2.03,13,-0.8,2.37,8,0.74,,"{""sl_atr"": 3.0, ""tp_atr"": 5.75, ""trail_activate"": 0.05, ""max_hold_h"": 57.6, ""rsi_buy"": 48.0, ""rules_min_score"": 55.0, ""min_score"": 55.0}"
+2,bb_max_pos-0.05,local_search,ok,-1.844,1.69,2.29,14,-0.29,1.9,9,0.91,,"{""sl_atr"": 3.0, ""tp_atr"": 5.75, ""trail_activate"": 0.05, ""max_hold_h"": 57.6, ""bb_max_pos"": 0.25, ""rules_min_score"": 55.0, ""min_score"": 55.0}"
+2,bb_max_pos+0.05,local_search,ok,-0.831,0.86,2.44,14,0.55,1.29,8,1.22,,"{""sl_atr"": 3.0, ""tp_atr"": 5.75, ""trail_activate"": 0.05, ""max_hold_h"": 57.6, ""bb_max_pos"": 0.35, ""rules_min_score"": 55.0, ""min_score"": 55.0}"

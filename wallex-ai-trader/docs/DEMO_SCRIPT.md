@@ -8,7 +8,7 @@
 ```bash
 cd wallex-ai-trader
 pip install -r requirements.txt
-python -m unittest discover -s tests -t .        # ۸۳ تست سبز
+python -m unittest discover -s tests -t .        # ۱۰۰ تست سبز
 python -m wallexbot backtest                     # گزارش تازه
 python -m wallexbot ui --demo                    # پنجرهٔ مرورگر روی http://127.0.0.1:8800
 ```

@@ -7,7 +7,7 @@
 
 | موضوع | نتیجه |
 |---|---|
-| تست‌ها | `83` تست، `1` skip (نیازمند پاسخ واقعی API)، ~۵ ثانیه |
+| تست‌ها | `100` تست، `1` skip (نیازمند پاسخ واقعی API)، ~۷ ثانیه |
 | بک‌تست دادهٔ واقعی | ۸ نماد × ۱۹۲ کندل ۱۵دقیقه‌ای (۲ روز) — بازده **−۰٫۹۷٪**، افت حداکثر **۱٫۷۱٪**، **۴** معامله، نرخ برد ۵۰٪ |
 | Replay (همان داده، حلقهٔ کامل همراه با تسویهٔ پایان چالش) | **۴** معامله، **−۱٫۲۵٪**، افت **۱٫۴۶٪**، ۱ برد/۳ باخت، تسویهٔ کامل به تومان |
 | پنل | `python -m wallexbot ui --demo` — بدون کلید، بدون اینترنت، روی دادهٔ ضبط‌شده |
@@ -107,6 +107,7 @@ python -m wallexbot backtest --ai-gate       # با AI واقعی در حلقه 
 python -m wallexbot backtest --synthetic     # فقط smoke؛ برچسب SYNTHETIC_NOT_EVIDENCE
 python -m wallexbot replay                   # Replay سریع در ترمینال (بدون UI)
 python -m wallexbot tune --grid quick        # walk-forward؛ انتخاب روی train، گزارش روی test
+python -m wallexbot optimize --ai --rounds 2 # چرخهٔ کامل: سناریوها + تحلیل AI + پیشنهاد برای تأیید
 ```
 
 **نتیجهٔ فعلی (دادهٔ واقعی ۲ روزه):**
@@ -124,6 +125,24 @@ python -m wallexbot tune --grid quick        # walk-forward؛ انتخاب رو�
 ۳۰۶ حالتی سود پایدار نداد. علت و مسیر بهبود در `docs/ZERO_TRADES_REPORT.md` و `docs/REPRODUCIBILITY.md` آمده است.
 اگر دادهٔ ۳۰ روزه جمع شود، `tune` می‌تواند پارامتر را روی بازهٔ آموزش انتخاب و روی بازهٔ آزمون بسنجد.
 
+### چرخهٔ بهینه‌سازی (کامل در [`docs/OPTIMIZER.md`](docs/OPTIMIZER.md))
+
+```bash
+python -m wallexbot fetch --days 30         # پیش‌نیاز: دادهٔ کافی (۳۰ روز)
+python -m wallexbot optimize --ai --rounds 2
+```
+
+سه پنجرهٔ پیوسته (۶۰٪ آموزش / ۲۰٪ اعتبارسنجی / ۲۰٪ آزمون) با شکاف purge؛ ۸ سناریوی نام‌دار
+(محافظه‌کار، فعال، تک‌الگویی، استاپ تنگ/گشاد …) + جهش محلی + پیشنهادهای AI. انتخاب فقط با آموزش،
+رتبه‌بندی با اعتبارسنجی، و پنجرهٔ آزمون **یک‌بار** در پایان و **بدون حضور در انتخاب** اجرا می‌شود
+(به AI هم نشان داده نمی‌شود). خروجی `logs/optimizer/<run>/` شامل `report.json`، `proposal.json`،
+`summary.md` است و `status: pending_approval` دارد؛ اعمال فقط با تأیید صریح:
+
+```bash
+python -m wallexbot optimize --list
+python -m wallexbot optimize --approve <run-id> --yes   # سپس params و safetytests دوباره
+```
+
 ## ۸) پنل وب
 
 | مسیر | کار |
@@ -136,6 +155,7 @@ python -m wallexbot tune --grid quick        # walk-forward؛ انتخاب رو�
 | `POST /api/bot/start|stop`، `/api/flatten`، `/api/reset-kill` | کنترل ربات |
 | `POST /api/settings`، `/api/test/connection`، `/api/test/ai` | تنظیم و آزمون اتصال |
 | `POST /api/backtest/run`، `/api/tests/run`، `/api/replay/start|stop` | اجرای بک‌تست/تست/Replay |
+| `GET /api/optimizer`، `/api/optimizer/<run>`، `POST /api/optimizer/start|stop|approve` | چرخهٔ بهینه‌سازی و تأیید پیشنهاد |
 | `GET/POST /api/mcp/tools`، `/api/mcp/call` | ابزارهای MCP والکس |
 
 نکتهٔ امنیتی: پنل به‌طور پیش‌فرض فقط روی `127.0.0.1` گوش می‌دهد. اگر `--host 0.0.0.0` می‌دهید، حتماً
@@ -160,6 +180,7 @@ python -m wallexbot fetch --days 30 [--allow-partial]
 python -m wallexbot backtest [--learn] [--ai-gate] [--synthetic]
 python -m wallexbot replay [--speed 5000] [--loop]
 python -m wallexbot tune [--grid quick|full] [--split 0.7]
+python -m wallexbot optimize [--ai] [--rounds 2] [--synthetic] [--list] [--approve <run-id> --yes]
 python -m wallexbot profiles [--apply active --write]
 python -m wallexbot selfcheck --yes-place-test-order
 python -m wallexbot safetytests
@@ -195,6 +216,7 @@ python -m unittest discover -s tests -t .
 | [`docs/AI_USAGE.md`](docs/AI_USAGE.md) | نقش‌ها، پرامپت‌ها، اعتبارسنجی JSON، fail-closed، لاگ |
 | [`docs/RISK.md`](docs/RISK.md) | سقف‌ها، sizing، kill-switch، ایمنی سفارش، سناریوهای شکست |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | راه‌اندازی، دروازهٔ live، عملیات، بازیابی، عیب‌یابی، راهنمای UI |
+| [`docs/OPTIMIZER.md`](docs/OPTIMIZER.md) | چرخهٔ بهینه‌سازی: پنجره‌ها، امتیاز مرکب، سناریوها، نقش AI، تأیید |
 | [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md) | داده، دستورها، هش‌ها، تست‌ها، محدودیت‌ها |
 | [`docs/SCORING_MAP.md`](docs/SCORING_MAP.md) | نقشهٔ ۳۰۰ امتیاز داوری به فایل/قابلیت |
 | [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) | سناریوی ویدیوی ۵ دقیقه‌ای |
@@ -203,6 +225,7 @@ python -m unittest discover -s tests -t .
 | [`docs/ZERO_TRADES_REPORT.md`](docs/ZERO_TRADES_REPORT.md) | تحلیل قیف سیگنال و صفر/کم‌معامله بودن |
 | [`docs/FIXES_2026-10.md`](docs/FIXES_2026-10.md) | فهرست باگ‌های رفع‌شده و شکاف‌های باقی‌مانده |
 | [`docs/evidence/replay_summary.json`](docs/evidence/replay_summary.json) | شاهد خروجی Replay (۴ معامله، flat_check) |
+| [`docs/evidence/optimizer/`](docs/evidence/optimizer/) | گزارش خروجی چرخهٔ بهینه‌سازی + پیام مسدودشدن دادهٔ کوتاه |
 
 ## ۱۳) محدودیت‌ها (صادقانه)
 
@@ -221,7 +244,7 @@ wallex-ai-trader/
 ├── wallexbot/            موتور (config, exchange, schemas, strategy, risk, orders, executors,
 │                         bot, backtest, replay, learner, ai_agent, mcp, safety, web)
 │   └── webui/            پنل (HTML/CSS/JS بدون build)
-├── tests/                ۸۳ تست + fake exchange + fixtures مستندات
+├── tests/                ۱۰۰ تست + fake exchange + fixtures مستندات
 ├── data/                 کندل واقعی ۱۵m + manifest (۸ نماد)
 ├── logs/backtest_real/   گزارش بک‌تست قابل‌بازتولید (JSON/CSV)
 ├── docs/                 مستندات فارسی داوری

@@ -33,6 +33,7 @@ python -m wallexbot ui --host 0.0.0.0 --port 8800 --token 'secret'
 | داشبورد | equity/بازده/افت، نمودار، پوزیشن‌ها، قیف موتور، تغذیهٔ تصمیم‌ها، وضعیت Replay |
 | معاملات | `logs/trades.csv` و فیلتر لاگ تصمیم‌ها |
 | بک‌تست | اجرای rules-only/learn/AI، نمایش گزارش، نمودار و قیف |
+| بهینه‌سازی | چرخهٔ سه‌پنجره‌ای (train/validation/test)، نوار پیشرفت، جدول سناریوها، پیشنهاد و دکمهٔ تأیید |
 | تنظیمات | ویرایش `.env`، آزمون اتصال والکس، آزمون AI، وضعیت دروازهٔ live، پروفایل‌های آماده |
 | ابزارها | ابزارهای MCP، اجرای unit/safety tests، دستورهای CLI |
 | راهنما | تغییرات سریع، هشدارها، مسیر لاگ‌ها |
@@ -40,9 +41,12 @@ python -m wallexbot ui --host 0.0.0.0 --port 8800 --token 'secret'
 ## ۲) چرخهٔ روزمره
 
 ```bash
-# شب قبل: داده و بک‌تست
+# شب قبل: داده، بک‌تست و بهینه‌سازی
 python -m wallexbot fetch --days 30
 python -m wallexbot backtest --learn
+python -m wallexbot optimize --ai --rounds 2      # پیشنهاد می‌دهد؛ اعمال نمی‌کند
+python -m wallexbot optimize --list
+python -m wallexbot optimize --approve <run-id> --yes   # فقط بعد از مرور summary.md
 python -m wallexbot tune --grid quick        # فقط اگر داده ≥ ~۳۰۰ کندل باشد
 
 # صبح: shadow روی بازار زنده (بدون ریسک)
@@ -167,6 +171,7 @@ rm -rf logs/replay logs/replay_cli    # فقط لاگ‌های قابل‌باز
 - [ ] `python -m unittest discover -s tests -t .` سبز
 - [ ] `python -m wallexbot backtest` اجرا و `logs/backtest_real/backtest_report.json` تازه
 - [ ] `python -m wallexbot ui --demo` باز و Replay در حال حرکت
+- [ ] `python -m wallexbot optimize --list` اجراها را نشان می‌دهد و آخرین پیشنهاد `pending_approval` است
 - [ ] `logs/trades.csv` حداقل یک معامله با `qty` غیرصفر
 - [ ] `docs/DEMO_SCRIPT.md` را دنبال کنید
 - [ ] `.env` در گیت نیست (`git status`)
